@@ -6,30 +6,66 @@ const CERTIFICATES = [
   {
     icon: Shield,
     color: '#34D399',
-    name: 'eJPT (Junior Penetration Tester)',
-    issuer: 'INE Security (eLearnSecurity)',
-    date: '2025',
+    name: 'ICCA',
+    issuer: 'INE',
+    date: 'Expedicion: sept. 2025',
+    credentialId: 'ID de la credencial: 160982534',
+    skills: 'Aptitudes: Google Cloud, Amazon Web Services (AWS) y 2 aptitudes mas',
     badge: 'ACTIVE',
     link: '#',
   },
   {
-    icon: Award,
+    icon: Shield,
     color: '#38BDF8',
-    name: 'SCRUM Fundamentals',
-    issuer: 'SCRUM Study / Scrum.org',
-    date: '2025',
+    name: 'Junior Penetration Tester',
+    issuer: 'INE',
+    date: 'Expedicion: jul. 2025',
+    credentialId: 'ID de la credencial: 156416723',
+    skills: 'Aptitudes: Hacking etico, Ciberseguridad',
     badge: 'VERIFIED',
     link: '#',
   },
   {
     icon: Lock,
     color: '#F59E0B',
-    name: 'SCRUM Developer',
-    issuer: 'SCRUM Study',
-    date: '2025',
+    name: 'IBM Cybersecurity Analyst',
+    issuer: 'IBM',
+    date: 'Expedicion: nov. 2024',
+    skills: 'Aptitudes: Ciberseguridad, Respuesta a incidentes de ciberseguridad y 2 aptitudes mas',
+    badge: 'VERIFIED',
+    link: '#',
+  },
+  {
+    icon: Award,
+    color: '#60A5FA',
+    name: '70-461, 761: Querying Microsoft SQL Server with Transact-SQL',
+    issuer: 'Udemy',
+    date: 'Expedicion: ago. 2024',
+    credentialId: 'ID de la credencial: UC-14f7f2a8-8b95-4cea-96ab-a70596dff4e5',
+    skills: 'Aptitudes: Microsoft SQL Server, Transact-SQL (T-SQL) y 3 aptitudes mas',
+    badge: 'VERIFIED',
+    link: '#',
+  },
+  {
+    icon: Lock,
+    color: '#22D3EE',
+    name: 'Introduction to MongoDB',
+    issuer: 'MongoDB',
+    date: 'Expedicion: sept. 2023',
+    credentialId: 'ID de la credencial: MDBa16dly5gq9',
+    badge: 'VERIFIED',
+    link: '#',
+  },
+  {
+    icon: Award,
+    color: '#F97316',
+    name: 'Scrum Fundamentals Certified (SFC™)',
+    issuer: 'Vabro.ai and VMEdu.com',
+    date: 'Expedicion: may. 2023',
+    credentialId: 'ID de la credencial: 981563',
     badge: 'VERIFIED',
     link: null,
-    footer: 'More certifications in progress...',
+    footer: 'Mas certificaciones en progreso...',
   },
 ]
 
@@ -39,7 +75,7 @@ export default function CertificatesSection() {
       <div className="max-w-[1200px] mx-auto px-4">
         <SectionHeader title="Certificates" number="06" />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {CERTIFICATES.map((cert, i) => {
             const Icon = cert.icon
             return (
@@ -62,6 +98,8 @@ export default function CertificatesSection() {
                     <h3 className="font-h3 text-primary mb-2">{cert.name}</h3>
                     <p className="font-body text-secondary mb-1">{cert.issuer}</p>
                     <p className="font-mono-sm text-tertiary">{cert.date}</p>
+                    {cert.credentialId && <p className="font-mono-sm text-tertiary mt-2">{cert.credentialId}</p>}
+                    {cert.skills && <p className="font-mono-sm text-tertiary mt-2">{cert.skills}</p>}
                   </div>
 
                   {/* Footer */}
@@ -71,7 +109,7 @@ export default function CertificatesSection() {
                         className="font-mono-sm inline-flex items-center gap-1 transition-all duration-200 hover:underline"
                         style={{ color: cert.color }}
                       >
-                        View Credential →
+                        Mostrar credencial →
                       </span>
                     ) : (
                       <span className="font-mono-sm text-tertiary">{cert.footer}</span>

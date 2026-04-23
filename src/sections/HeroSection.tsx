@@ -8,7 +8,7 @@ import StatusBadge from '../components/StatusBadge'
 const TERMINAL_LINES = [
   { text: 'load_profile --verbose', type: 'command' as const },
   { text: '// Initializing identity module...', type: 'comment' as const },
-  { text: 'Name:        [YOUR NAME]', type: 'output' as const, highlight: '[YOUR NAME]' },
+  { text: 'Name:        Victor Meneses', type: 'output' as const, highlight: 'Victor Meneses' },
   { text: 'Role:        Software Engineer @ Cuevatech', type: 'output' as const, highlight: 'Software Engineer' },
   { text: 'Education:   Software Engineering — UPC', type: 'output' as const },
   { text: 'Cert:        eJPT Certified', type: 'output' as const, highlight: 'eJPT' },

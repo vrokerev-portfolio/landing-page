@@ -6,30 +6,30 @@ import StatusBadge from '../components/StatusBadge'
 const SOCIAL_LINKS = [
   {
     label: 'github',
-    value: 'github.com/username',
+    value: 'vrokerev',
     icon: Github,
-    href: 'https://github.com/',
+    href: 'https://github.com/vrokerev',
     color: 'text-primary',
   },
   {
     label: 'linkedin',
-    value: 'linkedin.com/in/username',
+    value: 'victor-mma',
     icon: Linkedin,
-    href: 'https://linkedin.com/in/',
+    href: 'https://www.linkedin.com/in/victor-mma',
     color: 'text-primary',
   },
   {
     label: 'instagram',
-    value: '@username',
+    value: '@victhor.ma',
     icon: Instagram,
-    href: 'https://instagram.com/',
+    href: 'https://www.instagram.com/victhor.ma/',
     color: 'text-primary',
   },
   {
     label: 'email',
-    value: 'name@outlook.com',
+    value: 'victormanuelmeneses@hotmail.com',
     icon: Mail,
-    href: 'mailto:name@outlook.com',
+    href: 'mailto:victormanuelmeneses@hotmail.com',
     color: 'text-primary',
   },
   {
