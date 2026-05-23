@@ -1,22 +1,25 @@
-import { Shield, Award, Lock, Check } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Shield, Lock, Award, Check } from 'lucide-react'
 import ScrollReveal from '../components/ScrollReveal'
 import SectionHeader from '../components/SectionHeader'
 
 const CERTIFICATES = [
   {
+    id: 'cca',
     icon: Shield,
     color: '#34D399',
-    name: 'ICCA',
+    name: 'Certified Cybersecurity Analyst',
     issuer: 'INE',
-    date: 'Expedicion: sept. 2025',
-    credentialId: 'ID de la credencial: 160982534',
-    skills: 'Aptitudes: Google Cloud, Amazon Web Services (AWS) y 2 aptitudes mas',
-    badge: 'ACTIVE',
+    date: 'Expedicion: jul. 2025',
+    credentialId: 'ID de la credencial: 156185381',
+    skills: 'Aptitudes: Hacking etico, Ciberseguridad y 2 aptitudes mas',
+    badge: 'VERIFIED',
     link: '#',
     image: '/images/certifications/ine-cca.png',
   },
   {
-    icon: Shield,
+    id: 'ejpt',
+    icon: Lock,
     color: '#38BDF8',
     name: 'Junior Penetration Tester',
     issuer: 'INE',
@@ -28,6 +31,7 @@ const CERTIFICATES = [
     image: '/images/certifications/ine-ejpt.png',
   },
   {
+    id: 'ibm',
     icon: Lock,
     color: '#F59E0B',
     name: 'IBM Cybersecurity Analyst',
@@ -39,6 +43,7 @@ const CERTIFICATES = [
     image: '/images/certifications/ibm-cybersecurity-analyst.png',
   },
   {
+    id: 'sql',
     icon: Award,
     color: '#60A5FA',
     name: '70-461, 761: Querying Microsoft SQL Server with Transact-SQL',
@@ -51,6 +56,7 @@ const CERTIFICATES = [
     image: '/images/certifications/microsoft-70-461.png',
   },
   {
+    id: 'mongodb',
     icon: Lock,
     color: '#22D3EE',
     name: 'Introduction to MongoDB',
@@ -62,6 +68,7 @@ const CERTIFICATES = [
     image: '/images/certifications/mongodb-Introduction%20to%20MongoDB.png',
   },
   {
+    id: 'scrum',
     icon: Award,
     color: '#F97316',
     name: 'Scrum Fundamentals Certified (SFC™)',
@@ -76,6 +83,20 @@ const CERTIFICATES = [
 ]
 
 export default function CertificatesSection() {
+  const [flippedId, setFlippedId] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 768)
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+
+  const toggleCard = (id: string) => {
+    setFlippedId(current => (current === id ? null : id))
+  }
+
   return (
     <section id="certificates" className="section-padding">
       <div className="max-w-[1200px] mx-auto px-4">
@@ -84,12 +105,17 @@ export default function CertificatesSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {CERTIFICATES.map((cert, i) => {
             const Icon = cert.icon
+            const isFlipped = flippedId === cert.id
+
             return (
               <ScrollReveal key={cert.name} delay={i * 0.12}>
-                <div className="cert-flip">
+                <button
+                  type="button"
+                  className={`cert-flip w-full bg-transparent p-0 border-0 text-left ${isFlipped ? 'is-flipped' : ''}`}
+                  onClick={() => toggleCard(cert.id)}
+                >
                   <div className="cert-flip-inner">
                     <div className="cert-flip-face cert-flip-front bg-surface border border-[#232D3F] rounded-xl overflow-hidden h-full flex flex-col">
-                      {/* Header band */}
                       <div
                         className="h-[60px] flex items-center justify-between px-6"
                         style={{ backgroundColor: `${cert.color}15` }}
@@ -101,7 +127,6 @@ export default function CertificatesSection() {
                         </span>
                       </div>
 
-                      {/* Body */}
                       <div className="p-7 flex-1 flex flex-col">
                         <h3 className="font-h3 text-primary mb-2">{cert.name}</h3>
                         <p className="font-body text-secondary mb-1">{cert.issuer}</p>
@@ -110,8 +135,7 @@ export default function CertificatesSection() {
                         {cert.skills && <p className="font-mono-sm text-tertiary mt-2">{cert.skills}</p>}
                       </div>
 
-                      {/* Footer */}
-                      <div className="px-7 py-4 border-t border-[#232D3F]">
+                      <div className="px-7 py-4 border-t border-[#232D3F] flex items-center justify-between gap-4">
                         {cert.link ? (
                           <span
                             className="font-mono-sm inline-flex items-center gap-1 transition-all duration-200 hover:underline"
@@ -122,6 +146,9 @@ export default function CertificatesSection() {
                         ) : (
                           <span className="font-mono-sm text-tertiary">{cert.footer}</span>
                         )}
+                        <span className="font-mono-sm text-tertiary">
+                          {isMobile ? 'tap to flip' : 'hover / click'}
+                        </span>
                       </div>
                     </div>
 
@@ -139,7 +166,7 @@ export default function CertificatesSection() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               </ScrollReveal>
             )
           })}

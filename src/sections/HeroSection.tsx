@@ -5,6 +5,9 @@ import { useReducedMotion } from '../hooks/useReducedMotion'
 import ConstellationCanvas from './ConstellationCanvas'
 import StatusBadge from '../components/StatusBadge'
 
+const HERO_TYPE_SPEED_MS = 7
+const HERO_LINE_PAUSE_MS = 60
+
 const TERMINAL_LINES = [
   { text: 'load_profile --verbose', type: 'command' as const },
   { text: '// Initializing identity module...', type: 'comment' as const },
@@ -65,7 +68,7 @@ export default function HeroSection() {
       const timer = setTimeout(() => {
         setCurrentLineText(fullText.slice(0, charIndex + 1))
         setCharIndex(charIndex + 1)
-      }, 16)
+      }, HERO_TYPE_SPEED_MS)
       return () => clearTimeout(timer)
     } else {
       const timer = setTimeout(() => {
@@ -73,7 +76,7 @@ export default function HeroSection() {
         setCurrentLineIndex(currentLineIndex + 1)
         setCharIndex(0)
         setCurrentLineText('')
-      }, 180)
+      }, HERO_LINE_PAUSE_MS)
       return () => clearTimeout(timer)
     }
   }, [fontsLoaded, reducedMotion, currentLineIndex, charIndex])
@@ -130,7 +133,7 @@ export default function HeroSection() {
 
     const lineType = line.type
     return (
-      <div key={index} className="font-mono leading-5 whitespace-pre-wrap">
+      <div key={index} className="font-mono hero-terminal-line whitespace-pre-wrap">
         {lineType === 'command' && <span className="text-tertiary mr-2">$</span>}
         {parts.length > 0 ? parts : <span className={lineType === 'comment' ? 'text-tertiary' : 'text-primary'}>{text}</span>}
         {isCurrentLine && <span className={`text-cyan ${showCursor ? 'opacity-100' : 'opacity-0'}`}>_</span>}
@@ -170,10 +173,10 @@ export default function HeroSection() {
           </div>
 
           {/* Terminal body */}
-          <div ref={linesRef} className="p-7 space-y-1">
+          <div ref={linesRef} className="hero-terminal-body p-7 sm:p-8 space-y-1.5">
             {TERMINAL_LINES.map((line, i) => renderLine(line, i))}
             {typingDone && (
-              <div className="font-mono leading-5">
+              <div className="font-mono hero-terminal-line">
                 <span className="text-tertiary mr-2">$</span>
                 <span className={`text-cyan ${showCursor ? 'opacity-100' : 'opacity-0'}`}>_</span>
               </div>

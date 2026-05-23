@@ -30,3 +30,12 @@ npm install
 npm run build
 npm run dev
 ```
+
+## 2026-05-23 refinements
+- Hero terminal typing was sped up from 16ms/char + 180ms line delay to 7ms/char + 60ms line delay.
+- Hero terminal text was made slightly larger through `.hero-terminal-line`.
+- About portrait layout was adjusted upward/larger to reduce empty top space.
+- About title now has a blinking underscore cursor.
+- Profile portrait supports rotation through `PROFILE_IMAGES` in `src/sections/AboutSection.tsx`.
+- Professional Experience cards were redesigned into two-column terminal-style cards.
+- Experience cards use the same `item.color` as their dot for the animated perimeter halo.

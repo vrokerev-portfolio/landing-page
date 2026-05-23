@@ -1,39 +1,48 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { User, Code2, GraduationCap, ShieldCheck, Sparkles, type LucideIcon } from 'lucide-react'
 import ScrollReveal from '../components/ScrollReveal'
+import BorderGlowCard from '../components/BorderGlowCard'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const PROFILE_IMAGE = '/images/yo-portafolio.png'
+const PROFILE_IMAGES = [
+  '/images/yo-portafolio.png',
+  '/images/yo-guiar.png',
+  '/images/yo-snowboard.png',
+]
 
 const STATS = [
   {
     label: 'Experience',
     value: 'Software Engineer',
-    color: 'text-cyan',
+    color: '#38BDF8',
+    colorClass: 'text-cyan',
     sub: '@ Cuevatech',
     icon: Code2,
   },
   {
     label: 'Education',
     value: 'Software Engineering',
-    color: 'text-primary',
+    color: '#6366F1',
+    colorClass: 'text-primary',
     sub: 'Universidad Peruana de Ciencias Aplicadas',
     icon: GraduationCap,
   },
   {
     label: 'Certifications',
     value: 'Cybersecurity + Scrum',
-    color: 'text-green',
+    color: '#34D399',
+    colorClass: 'text-green',
     sub: 'eJPT, CCA, IBM, SCRUM',
     icon: ShieldCheck,
   },
 ]
 
 const PROFILE_NOTES: Array<{ label: string; value: string; icon: LucideIcon }> = [
-  { label: 'profile.image', value: 'transparent_png', icon: Sparkles },
+  { label: 'profile.image', value: 'rotating_gallery', icon: Sparkles },
   { label: 'focus.stack', value: 'react_next_sanity', icon: Code2 },
   { label: 'security.mode', value: 'enabled', icon: ShieldCheck },
 ]
@@ -59,19 +68,76 @@ function AnimatedCounter({ target, color }: { target: string; color: string }) {
   }, [])
 
   return (
-    <div ref={ref} className={`font-h3 ${color}`}>
+    <div ref={ref} className="font-h3" style={{ color }}>
       {target}
     </div>
   )
 }
 
 export default function AboutSection() {
+  const reducedMotion = useReducedMotion()
+  const nameTriggerRef = useRef<HTMLDivElement>(null)
+  const [profileImageIndex, setProfileImageIndex] = useState(0)
+  const [nameVisible, setNameVisible] = useState(false)
+  const [typedName, setTypedName] = useState('')
+
+  useEffect(() => {
+    if (reducedMotion || PROFILE_IMAGES.length <= 1) return
+
+    const interval = window.setInterval(() => {
+      setProfileImageIndex(index => (index + 1) % PROFILE_IMAGES.length)
+    }, 4200)
+
+    return () => window.clearInterval(interval)
+  }, [reducedMotion])
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setTypedName('Victor Meneses')
+      return
+    }
+
+    const el = nameTriggerRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setNameVisible(true)
+            observer.disconnect()
+          }
+        })
+      },
+      { threshold: 0.4 }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [reducedMotion])
+
+  useEffect(() => {
+    if (!nameVisible || reducedMotion) return
+    const fullName = 'Victor Meneses'
+    let index = 0
+    const interval = window.setInterval(() => {
+      index += 1
+      setTypedName(fullName.slice(0, index))
+      if (index >= fullName.length) {
+        window.clearInterval(interval)
+      }
+    }, 48)
+    return () => window.clearInterval(interval)
+  }, [nameVisible, reducedMotion])
+
+  const profileImage = PROFILE_IMAGES[profileImageIndex]
+
   return (
     <section id="about" className="section-padding">
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           <ScrollReveal className="lg:col-span-7" direction="left">
-            <div className="about-bio-panel bg-surface border border-[#232D3F] rounded-lg p-8 lg:p-10 h-full">
+            <div ref={nameTriggerRef} className="about-bio-panel bg-surface border border-[#232D3F] rounded-lg p-8 lg:p-10 h-full">
               <div className="about-scanline" aria-hidden="true" />
 
               <div className="flex items-center justify-between gap-4 pb-4 mb-6 border-b border-[#232D3F]">
@@ -88,8 +154,13 @@ export default function AboutSection() {
                   personal_overview
                 </div>
 
-                <h2 className="font-h2 text-primary mb-5">
-                  Software Engineer focused on modern web experiences and cybersecurity.
+                <div className="about-name-line mb-4">
+                  <span className="about-name-text">{typedName || (reducedMotion ? 'Victor Meneses' : '')}</span>
+                  <span className="about-name-cursor" aria-hidden="true">_</span>
+                </div>
+
+                <h2 className="font-h2 text-primary mb-5 about-title">
+                  Software Engineer focused on modern web experiences and cybersecurity
                 </h2>
 
                 <p className="font-body text-secondary mb-5">
@@ -117,7 +188,8 @@ export default function AboutSection() {
 
               <div className="profile-photo-frame">
                 <img
-                  src={PROFILE_IMAGE}
+                  key={profileImage}
+                  src={profileImage}
                   alt="Victor Meneses portrait"
                   className="profile-photo"
                   loading="lazy"
@@ -146,14 +218,16 @@ export default function AboutSection() {
               const Icon = stat.icon
               return (
                 <ScrollReveal key={stat.label} delay={i * 0.12} direction="up">
-                  <div className="about-stat-card bg-surface border border-[#232D3F] rounded-lg p-6 h-full">
-                    <div className="flex items-center justify-between gap-4 mb-4">
-                      <div className="font-mono-sm text-tertiary">{stat.label}</div>
-                      <Icon size={17} className={stat.color} />
+                  <BorderGlowCard color={stat.color} hoverOnly className="about-stat-glow-card h-full">
+                    <div className="about-stat-card p-6 h-full">
+                      <div className="flex items-center justify-between gap-4 mb-4">
+                        <div className="font-mono-sm text-tertiary">{stat.label}</div>
+                        <Icon size={17} className={stat.colorClass} />
+                      </div>
+                      <AnimatedCounter target={stat.value} color={stat.color} />
+                      <div className="font-mono-sm text-secondary mt-2">{stat.sub}</div>
                     </div>
-                    <AnimatedCounter target={stat.value} color={stat.color} />
-                    <div className="font-mono-sm text-secondary mt-2">{stat.sub}</div>
-                  </div>
+                  </BorderGlowCard>
                 </ScrollReveal>
               )
             })}

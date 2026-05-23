@@ -56,45 +56,44 @@ export default function ExperienceSection() {
           subtitle="Roles, practical work, and the technical profile behind the portfolio"
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-fr">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
           {EXPERIENCES.map((item, i) => (
-            <ScrollReveal
-              key={item.title}
-              delay={i * 0.1}
-              className={item.featured ? 'lg:col-span-2' : ''}
-            >
-              <BorderGlowCard
-                color={item.color}
-                className={`experience-glow-card h-full ${item.featured ? 'experience-card-wide' : ''}`}
-              >
-                <article className="experience-card-content h-full p-7 flex flex-col">
-                  <div className="flex items-center justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-2">
+            <ScrollReveal key={item.title} delay={i * 0.1}>
+              <BorderGlowCard color={item.color} hoverOnly className="experience-glow-card h-full">
+                <article className="experience-card-content h-full p-6 sm:p-7 flex flex-col">
+                  <div className="experience-card-header">
+                    <div className="experience-title-cluster">
                       <span
                         className="experience-dot"
                         style={{ backgroundColor: item.color, boxShadow: `0 0 18px ${item.color}` }}
                       />
-                      <span className="font-mono-sm text-tertiary">{item.label}</span>
+                      <div>
+                        <span className="experience-label font-mono-sm">{item.label}</span>
+                        <h3 className="font-h3 text-primary mt-2">{item.title}</h3>
+                      </div>
                     </div>
+                    <span className="experience-index font-mono-sm" style={{ color: item.color }}>
+                      0{i + 1}
+                    </span>
+                  </div>
+
+                  <div className="experience-period-row">
+                    <span className="font-mono-sm text-tertiary">period</span>
                     <span className="experience-period font-mono-sm" style={{ color: item.color }}>
                       {item.period}
                     </span>
                   </div>
 
-                  <h3 className="font-h3 text-primary mb-4">{item.title}</h3>
-                  <p className="font-body text-secondary mb-6 flex-1">{item.description}</p>
+                  <p className="font-body text-secondary mt-5 mb-6 flex-1">{item.description}</p>
 
                   <div className="experience-metric mb-5" style={{ '--metric-color': item.color } as CSSProperties}>
                     <span className="font-mono-sm text-tertiary">signal</span>
                     <span className="font-mono-sm text-primary">{item.metric}</span>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="experience-stack">
                     {item.stack.map(tech => (
-                      <span
-                        key={tech}
-                        className="px-2.5 py-1 bg-white/5 border border-[#232D3F] rounded font-mono-sm text-secondary"
-                      >
+                      <span key={tech} className="experience-chip font-mono-sm">
                         {tech}
                       </span>
                     ))}

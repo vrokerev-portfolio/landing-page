@@ -80,7 +80,7 @@ export default function SectionHeader({
         {animateTitle && !reducedMotion && <span className="section-title-cursor">_</span>}
       </h2>
       {subtitle && (
-        <p className="font-body text-secondary mt-4 max-w-xl">{subtitle}</p>
+        <p className={`font-body text-secondary mt-4 max-w-xl ${centered ? 'mx-auto' : ''}`}>{subtitle}</p>
       )}
     </div>
   )

@@ -1,11 +1,11 @@
 import { useRef, useEffect, useState } from 'react'
 
 const NAV_ITEMS = [
-  { label: 'Experience.ts', href: '#experience' },
-  { label: 'Projects.rs', href: '#projects' },
-  { label: 'Skills.json', href: '#skills' },
-  { label: 'Certs.crt', href: '#certificates' },
-  { label: 'Contact.sh', href: '#contact' },
+  { label: 'Experience', href: '#experience' },
+  { label: 'Projects', href: '#projects' },
+  { label: 'Skills', href: '#skills' },
+  { label: 'Certificates', href: '#certificates' },
+  { label: 'Contact', href: '#contact' },
 ]
 
 const SECTION_THEMES = [
