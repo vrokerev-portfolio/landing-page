@@ -44,7 +44,7 @@ export default function HeroSection() {
     gsap.from(terminalRef.current, {
       opacity: 0,
       y: 30,
-      duration: 0.8,
+      duration: 0.5,
       ease: 'power2.out',
     })
   }, [fontsLoaded, reducedMotion])
@@ -65,7 +65,7 @@ export default function HeroSection() {
       const timer = setTimeout(() => {
         setCurrentLineText(fullText.slice(0, charIndex + 1))
         setCharIndex(charIndex + 1)
-      }, 30)
+      }, 16)
       return () => clearTimeout(timer)
     } else {
       const timer = setTimeout(() => {
@@ -73,7 +73,7 @@ export default function HeroSection() {
         setCurrentLineIndex(currentLineIndex + 1)
         setCharIndex(0)
         setCurrentLineText('')
-      }, 400)
+      }, 180)
       return () => clearTimeout(timer)
     }
   }, [fontsLoaded, reducedMotion, currentLineIndex, charIndex])
@@ -85,7 +85,7 @@ export default function HeroSection() {
     gsap.from(ctaRef.current, {
       opacity: 0,
       y: 10,
-      duration: 0.4,
+      duration: 0.25,
       ease: 'power2.out',
     })
   }, [typingDone, reducedMotion])

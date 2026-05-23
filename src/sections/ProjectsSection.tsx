@@ -2,54 +2,52 @@ import ScrollReveal from '../components/ScrollReveal'
 import SectionHeader from '../components/SectionHeader'
 import BorderGlowCard from '../components/BorderGlowCard'
 
+
 const PROJECTS = [
   {
-    title: 'SecureChat',
-    description: 'End-to-end encrypted messaging application with vulnerability testing and security audit capabilities.',
-    stack: ['React', 'Node.js', 'Socket.io', 'JWT'],
+    title: 'Comercial Victor',
+    description: 'Sitio para un bazar en Pueblo Libre, pensado para mostrar su catalogo, redes sociales y ubicacion.',
+    stack: ['Vite', 'React', 'Tailwind'],
     color: '#38BDF8',
     glowClass: 'glow-cyan',
     featured: true,
+    image: '/images/projects/webpage-comercial-victor.png',
   },
   {
-    title: 'VulnScanner',
-    description: 'Automated vulnerability assessment tool for web applications.',
-    stack: ['Python', 'OWASP ZAP', 'Docker'],
+    title: 'Karin Bodas & Catering',
+    description: 'Landing para servicios de bodas y catering con portafolio, redes y presentacion de servicios.',
+    stack: ['Vite', 'React', 'Tailwind'],
     color: '#6366F1',
     glowClass: 'glow-blue',
-    featured: false,
+    featured: true,
+    image: '/images/projects/webpage-karin.png',
   },
   {
-    title: 'UPC Grades API',
-    description: 'REST API for academic grade management system.',
-    stack: ['Java', 'Spring Boot', 'PostgreSQL'],
+    title: 'Mi UPC (App)',
+    description: 'App que simula el ingreso a la universidad para evitar cierres de sesion del app oficial.',
+    stack: ['React', 'TypeScript', 'PWA'],
     color: '#34D399',
     glowClass: 'glow-green',
     featured: false,
+    image: '/images/projects/app-mi-upc.png',
   },
   {
-    title: 'NetMonitor',
-    description: 'Network traffic monitoring dashboard with real-time alerts.',
-    stack: ['Go', 'InfluxDB', 'Grafana'],
+    title: 'Erykan Solutions',
+    description: 'Emprendimiento con Harold Mayta para consultoria y desarrollo de software.',
+    stack: ['Branding', 'Web', 'Consultoria'],
     color: '#F59E0B',
     glowClass: 'glow-amber',
     featured: false,
+    image: null,
   },
   {
-    title: 'CryptoWallet',
-    description: 'Educational cryptocurrency wallet with security analysis.',
-    stack: ['TypeScript', 'Ethereum', 'Web3.js'],
+    title: 'Causa & Efecto',
+    description: 'Canal de entrevistas en la calle y contenido de humor con Alejandro Barturen.',
+    stack: ['Contenido', 'Redes', 'Produccion'],
     color: '#38BDF8',
     glowClass: 'glow-cyan',
     featured: false,
-  },
-  {
-    title: 'CTF Platform',
-    description: 'Capture The Flag competition platform for cybersecurity training with challenge rooms and scoreboard.',
-    stack: ['Next.js', 'MongoDB', 'Docker'],
-    color: '#6366F1',
-    glowClass: 'glow-blue',
-    featured: true,
+    image: null,
   },
 ]
 
@@ -72,45 +70,59 @@ export default function ProjectsSection() {
             >
               <BorderGlowCard
                 color={project.color}
-                className={`${project.glowClass} h-full`}
+                className={`${project.glowClass} project-glow h-full`}
               >
-                <div className="glow-card-inner p-8 flex flex-col h-full">
-                  {/* Category tag */}
-                  <div className="flex items-center gap-2 mb-4">
+                <div className="flex flex-col h-full overflow-hidden">
+                  {project.image && (
+                    <div className={`project-image-wrap ${project.featured ? 'project-image-featured' : ''}`}>
+                      <img
+                        src={project.image}
+                        alt={`${project.title} preview`}
+                        className="project-image"
+                        loading="lazy"
+                      />
+                      <div className="project-image-overlay" />
+                    </div>
+                  )}
+
+                  <div className="p-7 flex flex-col h-full">
+                    {/* Category tag */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: project.color }}
+                      />
+                      <span className="font-mono-sm text-tertiary">
+                        {project.featured ? 'featured_project' : 'project'}
+                      </span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="font-h3 text-primary mb-3">{project.title}</h3>
+
+                    {/* Description */}
+                    <p className="font-body text-secondary mb-6 flex-1">{project.description}</p>
+
+                    {/* Tech stack */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {project.stack.map(tech => (
+                        <span
+                          key={tech}
+                          className="px-2.5 py-1 bg-white/5 border border-[#232D3F] rounded font-mono-sm text-secondary"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Link */}
                     <span
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: project.color }}
-                    />
-                    <span className="font-mono-sm text-tertiary">
-                      {project.featured ? 'featured_project' : 'project'}
+                      className="font-mono-sm inline-flex items-center gap-1 transition-all duration-200 hover:underline"
+                      style={{ color: project.color }}
+                    >
+                      View →
                     </span>
                   </div>
-
-                  {/* Title */}
-                  <h3 className="font-h3 text-primary mb-3">{project.title}</h3>
-
-                  {/* Description */}
-                  <p className="font-body text-secondary mb-6 flex-1">{project.description}</p>
-
-                  {/* Tech stack */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {project.stack.map(tech => (
-                      <span
-                        key={tech}
-                        className="px-2.5 py-1 bg-white/5 border border-[#232D3F] rounded font-mono-sm text-secondary"
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Link */}
-                  <span
-                    className="font-mono-sm inline-flex items-center gap-1 transition-all duration-200 hover:underline"
-                    style={{ color: project.color }}
-                  >
-                    View →
-                  </span>
                 </div>
               </BorderGlowCard>
             </ScrollReveal>

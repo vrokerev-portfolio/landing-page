@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import SectionHeader from '../components/SectionHeader'
 
 interface SkillNode {
+  id: string
   text: string
   x: number
   y: number
@@ -28,6 +29,8 @@ interface SkillEdge {
   to: number
   color: string
   alpha: number
+  phase: number
+  speed: number
 }
 
 const SKILL_CLUSTERS = [
@@ -94,6 +97,7 @@ function createSkillNodes(width: number, height: number) {
   const edges: SkillEdge[] = []
 
   const coreNode: SkillNode = {
+    id: 'core',
     text: 'Core',
     x: width * 0.5,
     y: height * 0.45,
@@ -103,8 +107,8 @@ function createSkillNodes(width: number, height: number) {
     originY: height * 0.45,
     vx: 0,
     vy: 0,
-    size: 18,
-    radius: 36,
+    size: 16,
+    radius: 30,
     color: '#8B95A5',
     proficiency: 0,
     phase: Math.random() * Math.PI * 2,
@@ -128,6 +132,7 @@ function createSkillNodes(width: number, height: number) {
     const clusterX = (xMin + xMax) / 2
     const clusterY = (yMin + yMax) / 2
     const clusterNode: SkillNode = {
+      id: `cluster-${cluster.name}`,
       text: cluster.name,
       x: clusterX * width,
       y: clusterY * height,
@@ -137,8 +142,8 @@ function createSkillNodes(width: number, height: number) {
       originY: clusterY * height,
       vx: 0,
       vy: 0,
-      size: 16,
-      radius: 26,
+      size: 14,
+      radius: 22,
       color: cluster.color,
       proficiency: 0,
       phase: Math.random() * Math.PI * 2,
@@ -156,6 +161,8 @@ function createSkillNodes(width: number, height: number) {
       to: clusterIndex,
       color: cluster.color,
       alpha: 0.35,
+      phase: Math.random(),
+      speed: 0.35 + Math.random() * 0.2,
     })
 
     cluster.skills.forEach((skill, i) => {
@@ -168,6 +175,7 @@ function createSkillNodes(width: number, height: number) {
       const jitterY = (Math.random() - 0.5) * jitter
 
       const skillNode: SkillNode = {
+        id: `skill-${cluster.name}-${skill.name}`,
         text: skill.name,
         x: (baseX + jitterX) * width,
         y: (baseY + jitterY) * height,
@@ -177,8 +185,8 @@ function createSkillNodes(width: number, height: number) {
         originY: (baseY + jitterY) * height,
         vx: 0,
         vy: 0,
-        size: 13 + skill.proficiency * 4,
-        radius: 14 + skill.proficiency * 4,
+        size: 11 + skill.proficiency * 3,
+        radius: 12 + skill.proficiency * 3,
         color: cluster.color,
         proficiency: skill.proficiency,
         phase: Math.random() * Math.PI * 2,
@@ -196,6 +204,8 @@ function createSkillNodes(width: number, height: number) {
         to: skillIndex,
         color: cluster.color,
         alpha: 0.25,
+        phase: Math.random(),
+        speed: 0.45 + Math.random() * 0.25,
       })
     })
   })
@@ -210,6 +220,8 @@ function createSkillNodes(width: number, height: number) {
       to: bIndex,
       color: '#4A5568',
       alpha: 0.18,
+      phase: Math.random(),
+      speed: 0.25 + Math.random() * 0.2,
     })
   }
 
@@ -222,6 +234,7 @@ export default function SkillsSection() {
   const [hoveredSkill, setHoveredSkill] = useState<SkillNode | null>(null)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(false)
+  const activeNodeIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -231,8 +244,6 @@ export default function SkillsSection() {
   }, [])
 
   useEffect(() => {
-    if (isMobile) return
-
     if (!canvasRef.current || !containerRef.current) return
     const cvs: HTMLCanvasElement = canvasRef.current
     const cnt: HTMLDivElement = containerRef.current
@@ -290,17 +301,19 @@ export default function SkillsSection() {
           node.vy = 0
           continue
         }
-        const spring = node.type === 'core' ? 0.017 : 0.021
-        const driftX = Math.sin(time * 0.55 + node.phase) * (node.type === 'core' ? 6 : 10)
-        const driftY = Math.cos(time * 0.42 + node.phase) * (node.type === 'core' ? 4 : 8)
-        const targetX = node.baseX + driftX
-        const targetY = node.baseY + driftY
+        const spring = node.type === 'core' ? 0.012 : 0.015
+        const anchorX = node.originX + Math.sin(time * 0.12 + node.phase) * (node.type === 'core' ? 8 : 14)
+        const anchorY = node.originY + Math.cos(time * 0.1 + node.phase) * (node.type === 'core' ? 6 : 12)
+        const driftX = Math.sin(time * 0.45 + node.phase) * (node.type === 'core' ? 10 : 16)
+        const driftY = Math.cos(time * 0.36 + node.phase) * (node.type === 'core' ? 8 : 12)
+        const targetX = node.baseX + (anchorX - node.originX) + driftX
+        const targetY = node.baseY + (anchorY - node.originY) + driftY
         const dx = targetX - node.x
         const dy = targetY - node.y
         node.vx += dx * spring
         node.vy += dy * spring
-        node.vx *= 0.86
-        node.vy *= 0.86
+        node.vx *= 0.9
+        node.vy *= 0.9
         node.x += node.vx
         node.y += node.vy
       }
@@ -315,15 +328,26 @@ export default function SkillsSection() {
         const from = resolved[edge.from]
         const to = resolved[edge.to]
         if (!from || !to) continue
-        const gradient = ctx.createLinearGradient(from.nx, from.ny, to.nx, to.ny)
-        gradient.addColorStop(0, `rgba(99, 102, 241, ${edge.alpha})`)
-        gradient.addColorStop(1, `rgba(56, 189, 248, ${edge.alpha * 0.7})`)
-        ctx.strokeStyle = gradient
+        ctx.save()
+        const edgeColor = hexToRgba(edge.color, edge.alpha)
+        const edgeGlow = hexToRgba(edge.color, edge.alpha * 0.7)
+        ctx.strokeStyle = edgeColor
+        ctx.shadowColor = edgeGlow
+        ctx.shadowBlur = 6
         ctx.lineWidth = 1
         ctx.beginPath()
         ctx.moveTo(from.nx, from.ny)
         ctx.lineTo(to.nx, to.ny)
         ctx.stroke()
+        ctx.restore()
+
+        const packetT = (time * edge.speed + edge.phase) % 1
+        const packetX = from.nx + (to.nx - from.nx) * packetT
+        const packetY = from.ny + (to.ny - from.ny) * packetT
+        ctx.beginPath()
+        ctx.arc(packetX, packetY, 2.2, 0, Math.PI * 2)
+        ctx.fillStyle = hexToRgba(edge.color, 0.85)
+        ctx.fill()
       }
 
       for (const item of resolved) {
@@ -385,26 +409,28 @@ export default function SkillsSection() {
         ctx.fill()
         ctx.restore()
 
-        // Text label (always visible)
-        const fontSize = skill.size * (skill.hover ? 1.05 : 1)
-        ctx.font = `${fontSize}px "JetBrains Mono"`
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
+        const showLabel = !isMobile || skill.type === 'cluster' || activeNodeIdRef.current === skill.id
+        if (showLabel) {
+          const fontSize = skill.size * (skill.hover ? 1.05 : 1)
+          ctx.font = `${fontSize}px "JetBrains Mono"`
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'
-        ctx.fillText(skill.text, nx + 1, ny + 1)
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'
+          ctx.fillText(skill.text, nx + 1, ny + 1)
 
-        if (skill.glitch) {
-          ctx.shadowOffsetX = (Math.random() - 0.5) * 10
-          ctx.shadowColor = skill.color
-        } else {
-          ctx.shadowOffsetX = 0
+          if (skill.glitch) {
+            ctx.shadowOffsetX = (Math.random() - 0.5) * 10
+            ctx.shadowColor = skill.color
+          } else {
+            ctx.shadowOffsetX = 0
+          }
+          ctx.shadowOffsetY = 0
+          ctx.shadowBlur = skill.hover ? 16 : 8
+          ctx.fillStyle = skill.color
+          ctx.fillText(skill.text, nx, ny)
+          ctx.shadowBlur = 0
         }
-        ctx.shadowOffsetY = 0
-        ctx.shadowBlur = skill.hover ? 16 : 8
-        ctx.fillStyle = skill.color
-        ctx.fillText(skill.text, nx, ny)
-        ctx.shadowBlur = 0
 
         // Hover detection
         const dx = mousePos.x - nx
@@ -449,20 +475,23 @@ export default function SkillsSection() {
         node.baseY = node.originY + (node.y - node.originY) * 0.2
       }
 
-      // Find hovered skill for tooltip
-      let hovered: SkillNode | null = null
-      for (const skill of nodes) {
-        const nx = skill.x + mouseOffset.x * (skill.size / 28) * 0.2
-        const ny = skill.y + mouseOffset.y * (skill.size / 28) * 0.2
-        const dx = x - nx
-        const dy = y - ny
-        const hitRadius = skill.radius + 10
-        if (Math.sqrt(dx * dx + dy * dy) < hitRadius) {
-          hovered = skill.type === 'skill' ? skill : null
-          break
+      if (!isMobile) {
+        let hovered: SkillNode | null = null
+        for (const skill of nodes) {
+          const nx = skill.x + mouseOffset.x * (skill.size / 28) * 0.2
+          const ny = skill.y + mouseOffset.y * (skill.size / 28) * 0.2
+          const dx = x - nx
+          const dy = y - ny
+          const hitRadius = skill.radius + 10
+          if (Math.sqrt(dx * dx + dy * dy) < hitRadius) {
+            hovered = skill.type === 'skill' ? skill : null
+            break
+          }
         }
+        setHoveredSkill(hovered)
+      } else {
+        setHoveredSkill(null)
       }
-      setHoveredSkill(hovered)
     }
 
     function handleMouseDown(e: MouseEvent) {
@@ -476,12 +505,46 @@ export default function SkillsSection() {
       dragOffset.y = nodes[index].y - y
     }
 
+    function handlePointerDown(e: PointerEvent) {
+      if (e.pointerType !== 'touch') return
+      const rect = cvs.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      const index = getNodeAt(x, y)
+      if (index === null) return
+      const node = nodes[index]
+      activeNodeIdRef.current = activeNodeIdRef.current === node.id ? null : node.id
+    }
+
+    function handleTap(e: MouseEvent) {
+      if (!isMobile) return
+      const rect = cvs.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      const index = getNodeAt(x, y)
+      if (index === null) return
+      const node = nodes[index]
+      activeNodeIdRef.current = activeNodeIdRef.current === node.id ? null : node.id
+    }
+
     function handleMouseUp() {
       draggingIndex = null
     }
 
     function handleMouseLeave() {
       draggingIndex = null
+    }
+
+    function handleTouchStart(e: TouchEvent) {
+      const rect = cvs.getBoundingClientRect()
+      const touch = e.touches[0]
+      if (!touch) return
+      const x = touch.clientX - rect.left
+      const y = touch.clientY - rect.top
+      const index = getNodeAt(x, y)
+      if (index === null) return
+      const node = nodes[index]
+      activeNodeIdRef.current = activeNodeIdRef.current === node.id ? null : node.id
     }
 
     resize()
@@ -504,6 +567,9 @@ export default function SkillsSection() {
     cvs.addEventListener('mousemove', handleMouseMove)
     cvs.addEventListener('mousedown', handleMouseDown)
     cvs.addEventListener('mouseleave', handleMouseLeave)
+    cvs.addEventListener('pointerdown', handlePointerDown)
+    cvs.addEventListener('touchstart', handleTouchStart, { passive: true })
+    cvs.addEventListener('click', handleTap)
     window.addEventListener('mouseup', handleMouseUp)
 
     return () => {
@@ -512,6 +578,9 @@ export default function SkillsSection() {
       cvs.removeEventListener('mousemove', handleMouseMove)
       cvs.removeEventListener('mousedown', handleMouseDown)
       cvs.removeEventListener('mouseleave', handleMouseLeave)
+      cvs.removeEventListener('pointerdown', handlePointerDown)
+      cvs.removeEventListener('touchstart', handleTouchStart)
+      cvs.removeEventListener('click', handleTap)
       window.removeEventListener('mouseup', handleMouseUp)
       ro.disconnect()
     }
@@ -529,73 +598,47 @@ export default function SkillsSection() {
         <SectionHeader title="Technical Skills" number="05" centered />
       </div>
 
-      {/* Desktop: Canvas visualization */}
-      {!isMobile && (
-        <div ref={containerRef} className="relative w-full" style={{ height: 600 }}>
-          <canvas ref={canvasRef} className="absolute inset-0" />
+      <div ref={containerRef} className="relative w-full h-[640px] md:h-[600px]">
+        <canvas ref={canvasRef} className="absolute inset-0 touch-manipulation" />
 
-          {/* Proficiency tooltip */}
-          {hoveredSkill && (
-            <div
-              className="absolute pointer-events-none bg-surface-elevated border border-[#232D3F] rounded-lg p-3 z-10"
-              style={{
-                left: mousePos.x + 15,
-                top: mousePos.y - 60,
-              }}
-            >
-              <div className="font-mono text-primary mb-1">{hoveredSkill.text}</div>
-              <div className="flex items-center gap-2">
-                <div className="w-[100px] h-1 bg-[#232D3F] rounded overflow-hidden">
-                  <div
-                    className="h-full rounded"
-                    style={{
-                      width: `${(hoveredSkill.proficiency / 3) * 100}%`,
-                      backgroundColor: hoveredSkill.color,
-                    }}
-                  />
-                </div>
-                <span className="font-mono-sm text-tertiary">
-                  {proficiencyLabel(hoveredSkill.proficiency)}
-                </span>
+        {/* Proficiency tooltip */}
+        {!isMobile && hoveredSkill && (
+          <div
+            className="absolute pointer-events-none bg-surface-elevated border border-[#232D3F] rounded-lg p-3 z-10"
+            style={{
+              left: mousePos.x + 15,
+              top: mousePos.y - 60,
+            }}
+          >
+            <div className="font-mono text-primary mb-1">{hoveredSkill.text}</div>
+            <div className="flex items-center gap-2">
+              <div className="w-[100px] h-1 bg-[#232D3F] rounded overflow-hidden">
+                <div
+                  className="h-full rounded"
+                  style={{
+                    width: `${(hoveredSkill.proficiency / 3) * 100}%`,
+                    backgroundColor: hoveredSkill.color,
+                  }}
+                />
               </div>
+              <span className="font-mono-sm text-tertiary">
+                {proficiencyLabel(hoveredSkill.proficiency)}
+              </span>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Mobile: Static grid fallback */}
-      {isMobile && (
-        <div className="max-w-[1200px] mx-auto px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {SKILL_CLUSTERS.map(cluster => (
-              <div key={cluster.name} className="bg-surface border border-[#232D3F] rounded-lg p-6">
-                <h3 className="font-h3 mb-4" style={{ color: cluster.color }}>{cluster.name}</h3>
-                <div className="flex flex-wrap gap-2">
-                  {cluster.skills.map(skill => (
-                    <span
-                      key={skill.name}
-                      className="px-3 py-1.5 bg-white/5 border border-[#232D3F] rounded font-mono-sm text-secondary flex items-center gap-2"
-                    >
-                      {skill.name}
-                      <span className="flex gap-0.5">
-                        {[1, 2, 3].map(dot => (
-                          <span
-                            key={dot}
-                            className="w-1 h-1 rounded-full"
-                            style={{
-                              backgroundColor: dot <= skill.proficiency ? cluster.color : '#232D3F',
-                            }}
-                          />
-                        ))}
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   )
+}
+
+function hexToRgba(hex: string, alpha: number) {
+  const cleaned = hex.replace('#', '')
+  const value = cleaned.length === 3
+    ? cleaned.split('').map(char => char + char).join('')
+    : cleaned
+  const r = Number.parseInt(value.slice(0, 2), 16)
+  const g = Number.parseInt(value.slice(2, 4), 16)
+  const b = Number.parseInt(value.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
