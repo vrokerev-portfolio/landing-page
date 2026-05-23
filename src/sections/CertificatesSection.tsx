@@ -13,6 +13,7 @@ const CERTIFICATES = [
     skills: 'Aptitudes: Google Cloud, Amazon Web Services (AWS) y 2 aptitudes mas',
     badge: 'ACTIVE',
     link: '#',
+    image: '/images/certifications/ine-cca.png',
   },
   {
     icon: Shield,
@@ -24,6 +25,7 @@ const CERTIFICATES = [
     skills: 'Aptitudes: Hacking etico, Ciberseguridad',
     badge: 'VERIFIED',
     link: '#',
+    image: '/images/certifications/ine-ejpt.png',
   },
   {
     icon: Lock,
@@ -34,6 +36,7 @@ const CERTIFICATES = [
     skills: 'Aptitudes: Ciberseguridad, Respuesta a incidentes de ciberseguridad y 2 aptitudes mas',
     badge: 'VERIFIED',
     link: '#',
+    image: '/images/certifications/ibm-cybersecurity-analyst.png',
   },
   {
     icon: Award,
@@ -45,6 +48,7 @@ const CERTIFICATES = [
     skills: 'Aptitudes: Microsoft SQL Server, Transact-SQL (T-SQL) y 3 aptitudes mas',
     badge: 'VERIFIED',
     link: '#',
+    image: '/images/certifications/microsoft-70-461.png',
   },
   {
     icon: Lock,
@@ -55,6 +59,7 @@ const CERTIFICATES = [
     credentialId: 'ID de la credencial: MDBa16dly5gq9',
     badge: 'VERIFIED',
     link: '#',
+    image: '/images/certifications/mongodb-Introduction%20to%20MongoDB.png',
   },
   {
     icon: Award,
@@ -66,6 +71,7 @@ const CERTIFICATES = [
     badge: 'VERIFIED',
     link: null,
     footer: 'Mas certificaciones en progreso...',
+    image: '/images/certifications/scrumstudy-scrum-fundamentals-certified.png',
   },
 ]
 
@@ -80,40 +86,58 @@ export default function CertificatesSection() {
             const Icon = cert.icon
             return (
               <ScrollReveal key={cert.name} delay={i * 0.12}>
-                <div className="bg-surface border border-[#232D3F] rounded-xl overflow-hidden h-full flex flex-col">
-                  {/* Header band */}
-                  <div
-                    className="h-[60px] flex items-center justify-between px-6"
-                    style={{ backgroundColor: `${cert.color}15` }}
-                  >
-                    <Icon size={24} style={{ color: cert.color }} />
-                    <span className="flex items-center gap-1.5 font-mono-sm text-green">
-                      <Check size={12} />
-                      {cert.badge}
-                    </span>
-                  </div>
-
-                  {/* Body */}
-                  <div className="p-7 flex-1 flex flex-col">
-                    <h3 className="font-h3 text-primary mb-2">{cert.name}</h3>
-                    <p className="font-body text-secondary mb-1">{cert.issuer}</p>
-                    <p className="font-mono-sm text-tertiary">{cert.date}</p>
-                    {cert.credentialId && <p className="font-mono-sm text-tertiary mt-2">{cert.credentialId}</p>}
-                    {cert.skills && <p className="font-mono-sm text-tertiary mt-2">{cert.skills}</p>}
-                  </div>
-
-                  {/* Footer */}
-                  <div className="px-7 py-4 border-t border-[#232D3F]">
-                    {cert.link ? (
-                      <span
-                        className="font-mono-sm inline-flex items-center gap-1 transition-all duration-200 hover:underline"
-                        style={{ color: cert.color }}
+                <div className="cert-flip">
+                  <div className="cert-flip-inner">
+                    <div className="cert-flip-face cert-flip-front bg-surface border border-[#232D3F] rounded-xl overflow-hidden h-full flex flex-col">
+                      {/* Header band */}
+                      <div
+                        className="h-[60px] flex items-center justify-between px-6"
+                        style={{ backgroundColor: `${cert.color}15` }}
                       >
-                        Mostrar credencial →
-                      </span>
-                    ) : (
-                      <span className="font-mono-sm text-tertiary">{cert.footer}</span>
-                    )}
+                        <Icon size={24} style={{ color: cert.color }} />
+                        <span className="flex items-center gap-1.5 font-mono-sm text-green">
+                          <Check size={12} />
+                          {cert.badge}
+                        </span>
+                      </div>
+
+                      {/* Body */}
+                      <div className="p-7 flex-1 flex flex-col">
+                        <h3 className="font-h3 text-primary mb-2">{cert.name}</h3>
+                        <p className="font-body text-secondary mb-1">{cert.issuer}</p>
+                        <p className="font-mono-sm text-tertiary">{cert.date}</p>
+                        {cert.credentialId && <p className="font-mono-sm text-tertiary mt-2">{cert.credentialId}</p>}
+                        {cert.skills && <p className="font-mono-sm text-tertiary mt-2">{cert.skills}</p>}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="px-7 py-4 border-t border-[#232D3F]">
+                        {cert.link ? (
+                          <span
+                            className="font-mono-sm inline-flex items-center gap-1 transition-all duration-200 hover:underline"
+                            style={{ color: cert.color }}
+                          >
+                            Mostrar credencial →
+                          </span>
+                        ) : (
+                          <span className="font-mono-sm text-tertiary">{cert.footer}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="cert-flip-face cert-flip-back">
+                      <div className="cert-image-frame" style={{ borderColor: `${cert.color}66` }}>
+                        <img
+                          src={cert.image}
+                          alt={`${cert.name} certificate`}
+                          className="cert-image"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="cert-back-label" style={{ color: cert.color }}>
+                        {cert.name}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </ScrollReveal>
