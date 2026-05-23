@@ -9,9 +9,7 @@ import { useReducedMotion } from '../hooks/useReducedMotion'
 gsap.registerPlugin(ScrollTrigger)
 
 const PROFILE_IMAGES = [
-  '/images/yo-portafolio.png',
-  '/images/yo-guiar.png',
-  '/images/yo-snowboard.png',
+  '/images/yo-portafolio.png'
 ]
 
 const STATS = [
