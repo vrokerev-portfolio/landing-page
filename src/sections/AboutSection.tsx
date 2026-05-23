@@ -1,30 +1,41 @@
 import { useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { User } from 'lucide-react'
+import { User, Code2, GraduationCap, ShieldCheck, Sparkles, type LucideIcon } from 'lucide-react'
 import ScrollReveal from '../components/ScrollReveal'
 
 gsap.registerPlugin(ScrollTrigger)
+
+const PROFILE_IMAGE = '/images/yo-portafolio.png'
 
 const STATS = [
   {
     label: 'Experience',
     value: 'Software Engineer',
     color: 'text-cyan',
-    sub: '@ Cuevatech since Aug 2025',
+    sub: '@ Cuevatech',
+    icon: Code2,
   },
   {
     label: 'Education',
     value: 'Software Engineering',
     color: 'text-primary',
-    sub: 'Universitat Politecnica de Catalunya',
+    sub: 'Universidad Peruana de Ciencias Aplicadas',
+    icon: GraduationCap,
   },
   {
     label: 'Certifications',
-    value: '3 Active',
+    value: 'Cybersecurity + Scrum',
     color: 'text-green',
-    sub: 'eJPT + SCRUM',
+    sub: 'eJPT, CCA, IBM, SCRUM',
+    icon: ShieldCheck,
   },
+]
+
+const PROFILE_NOTES: Array<{ label: string; value: string; icon: LucideIcon }> = [
+  { label: 'profile.image', value: 'transparent_png', icon: Sparkles },
+  { label: 'focus.stack', value: 'react_next_sanity', icon: Code2 },
+  { label: 'security.mode', value: 'enabled', icon: ShieldCheck },
 ]
 
 function AnimatedCounter({ target, color }: { target: string; color: string }) {
@@ -34,7 +45,6 @@ function AnimatedCounter({ target, color }: { target: string; color: string }) {
     const el = ref.current
     if (!el) return
 
-    // For text values, just animate opacity
     gsap.from(el, {
       opacity: 0,
       y: 10,
@@ -59,49 +69,94 @@ export default function AboutSection() {
   return (
     <section id="about" className="section-padding">
       <div className="max-w-[1200px] mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Bio Panel - Left */}
-          <ScrollReveal className="lg:col-span-3" direction="left">
-            <div className="bg-surface border border-[#232D3F] rounded-lg p-8 lg:p-10 h-full">
-              {/* Header */}
-              <div className="flex items-center gap-3 pb-4 mb-6 border-b border-[#232D3F]">
-                <User size={16} className="text-cyan" />
-                <span className="font-mono text-secondary">about.md</span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          <ScrollReveal className="lg:col-span-7" direction="left">
+            <div className="about-bio-panel bg-surface border border-[#232D3F] rounded-lg p-8 lg:p-10 h-full">
+              <div className="about-scanline" aria-hidden="true" />
+
+              <div className="flex items-center justify-between gap-4 pb-4 mb-6 border-b border-[#232D3F]">
+                <div className="flex items-center gap-3">
+                  <User size={16} className="text-cyan" />
+                  <span className="font-mono text-secondary">about.md</span>
+                </div>
+                <span className="font-mono-sm text-tertiary hidden sm:inline">status: compiling_profile</span>
               </div>
 
-              {/* Content */}
-              <h2 className="font-h2 text-primary mb-5">
-                Software Engineer | Cybersecurity | UPC Student
-              </h2>
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan/20 bg-cyan/5 font-mono-sm text-cyan mb-5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan animate-pulse" />
+                  personal_overview
+                </div>
 
-              <p className="font-body text-secondary mb-5">
-                I am a Software Engineering student at UPC, currently growing through academic work, real professional experience, certifications, and continuous learning.
-              </p>
+                <h2 className="font-h2 text-primary mb-5">
+                  Software Engineer focused on modern web experiences and cybersecurity.
+                </h2>
 
-              <div className="border-t border-[#232D3F] my-5" />
+                <p className="font-body text-secondary mb-5">
+                  I am a Software Engineering student at UPC, building real projects while improving my technical profile through professional work, certifications, and continuous learning.
+                </p>
 
-              <p className="font-body text-secondary mb-6">
-                I am proactive, curious, and always looking to improve my technical and professional profile. I have taught cybersecurity classes at UPC, combining technical knowledge with communication skills.
-              </p>
+                <div className="border-t border-[#232D3F] my-5" />
 
-              {/* Footer metadata */}
-              <div className="font-mono-sm text-tertiary pt-4 border-t border-[#232D3F]">
-                Location: Barcelona, Spain | Timezone: CET (UTC+1)
+                <p className="font-body text-secondary mb-6">
+                  My current focus is creating fast, polished, and maintainable interfaces with React/Next.js, while keeping a security mindset from my cybersecurity background.
+                </p>
+
+                <div className="about-command-line font-mono-sm text-tertiary pt-4 border-t border-[#232D3F]">
+                  <span className="text-cyan">$</span> whoami --location Lima, Peru --english B2
+                </div>
               </div>
             </div>
           </ScrollReveal>
 
-          {/* Quick Stats - Right */}
-          <div className="lg:col-span-2 flex flex-col gap-4">
-            {STATS.map((stat, i) => (
-              <ScrollReveal key={stat.label} delay={i * 0.15} direction="right">
-                <div className="bg-surface border border-[#232D3F] rounded-lg p-6">
-                  <div className="font-mono-sm text-tertiary mb-2">{stat.label}</div>
-                  <AnimatedCounter target={stat.value} color={stat.color} />
-                  <div className="font-mono-sm text-secondary mt-1">{stat.sub}</div>
-                </div>
-              </ScrollReveal>
-            ))}
+          <ScrollReveal className="lg:col-span-5" direction="right" delay={0.1}>
+            <div className="profile-visual-card h-full rounded-lg border border-[#232D3F] bg-surface overflow-hidden">
+              <div className="profile-grid-bg" aria-hidden="true" />
+              <div className="profile-orbit profile-orbit-one" aria-hidden="true" />
+              <div className="profile-orbit profile-orbit-two" aria-hidden="true" />
+
+              <div className="profile-photo-frame">
+                <img
+                  src={PROFILE_IMAGE}
+                  alt="Victor Meneses portrait"
+                  className="profile-photo"
+                  loading="lazy"
+                />
+              </div>
+
+              <div className="profile-note-stack">
+                {PROFILE_NOTES.map((note, index) => {
+                  const Icon = note.icon
+                  return (
+                    <div key={note.label} className="profile-note" style={{ animationDelay: `${index * 0.18}s` }}>
+                      <Icon size={14} className="text-cyan" />
+                      <div>
+                        <div className="font-mono-sm text-tertiary">{note.label}</div>
+                        <div className="font-mono-sm text-primary">{note.value}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {STATS.map((stat, i) => {
+              const Icon = stat.icon
+              return (
+                <ScrollReveal key={stat.label} delay={i * 0.12} direction="up">
+                  <div className="about-stat-card bg-surface border border-[#232D3F] rounded-lg p-6 h-full">
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                      <div className="font-mono-sm text-tertiary">{stat.label}</div>
+                      <Icon size={17} className={stat.color} />
+                    </div>
+                    <AnimatedCounter target={stat.value} color={stat.color} />
+                    <div className="font-mono-sm text-secondary mt-2">{stat.sub}</div>
+                  </div>
+                </ScrollReveal>
+              )
+            })}
           </div>
         </div>
       </div>
