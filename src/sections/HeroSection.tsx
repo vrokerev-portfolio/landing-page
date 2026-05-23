@@ -144,7 +144,7 @@ export default function HeroSection() {
   }
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section id="hero" ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <ConstellationCanvas />
 
       <div className="relative z-10 w-full max-w-[800px] mx-auto px-4 py-20 flex flex-col items-center">

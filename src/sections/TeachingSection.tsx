@@ -215,7 +215,7 @@ export default function TeachingSection() {
   }, [])
 
   return (
-    <section className="pt-[120px]">
+    <section id="teaching" className="pt-[120px]">
       <div className="max-w-[1200px] mx-auto px-4">
         <ScrollReveal>
           <SectionHeader

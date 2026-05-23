@@ -40,8 +40,9 @@ export default function App() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-page text-primary">
+    <div className="app-shell min-h-screen bg-page text-primary">
       <Navigation />
+      <div className="global-aurora" aria-hidden="true" />
       <main>
         <HeroSection />
         <AboutSection />

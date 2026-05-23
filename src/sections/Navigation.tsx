@@ -1,5 +1,4 @@
 import { useRef, useEffect, useState } from 'react'
-import { useScrollDirection } from '../hooks/useScrollDirection'
 
 const NAV_ITEMS = [
   { label: 'Experience.ts', href: '#experience' },
@@ -9,29 +8,65 @@ const NAV_ITEMS = [
   { label: 'Contact.sh', href: '#contact' },
 ]
 
+const SECTION_THEMES = [
+  { id: 'hero', color: '#38BDF8', rgb: '56, 189, 248', secondaryRgb: '52, 211, 153', tertiaryRgb: '99, 102, 241', hue: '0deg', navBg: 'rgba(56, 189, 248, 0.1)' },
+  { id: 'about', color: '#38BDF8', rgb: '56, 189, 248', secondaryRgb: '52, 211, 153', tertiaryRgb: '99, 102, 241', hue: '0deg', navBg: 'rgba(56, 189, 248, 0.12)' },
+  { id: 'experience', color: '#6366F1', rgb: '99, 102, 241', secondaryRgb: '56, 189, 248', tertiaryRgb: '236, 72, 153', hue: '34deg', navBg: 'rgba(99, 102, 241, 0.12)' },
+  { id: 'teaching', color: '#34D399', rgb: '52, 211, 153', secondaryRgb: '34, 211, 238', tertiaryRgb: '99, 102, 241', hue: '82deg', navBg: 'rgba(52, 211, 153, 0.1)' },
+  { id: 'projects', color: '#F59E0B', rgb: '245, 158, 11', secondaryRgb: '236, 72, 153', tertiaryRgb: '56, 189, 248', hue: '148deg', navBg: 'rgba(245, 158, 11, 0.11)' },
+  { id: 'skills', color: '#22D3EE', rgb: '34, 211, 238', secondaryRgb: '99, 102, 241', tertiaryRgb: '52, 211, 153', hue: '-12deg', navBg: 'rgba(34, 211, 238, 0.1)' },
+  { id: 'certificates', color: '#34D399', rgb: '52, 211, 153', secondaryRgb: '245, 158, 11', tertiaryRgb: '96, 165, 250', hue: '82deg', navBg: 'rgba(52, 211, 153, 0.1)' },
+  { id: 'contact', color: '#EC4899', rgb: '236, 72, 153', secondaryRgb: '56, 189, 248', tertiaryRgb: '245, 158, 11', hue: '222deg', navBg: 'rgba(236, 72, 153, 0.1)' },
+]
+
+const DEFAULT_THEME = SECTION_THEMES[0]
+
 export default function Navigation() {
-  const directionRef = useScrollDirection()
   const navRef = useRef<HTMLElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
-  const [activeSection, setActiveSection] = useState('')
+  const [activeSection, setActiveSection] = useState('hero')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [time, setTime] = useState('')
+  const activeTheme = SECTION_THEMES.find(section => section.id === activeSection) ?? DEFAULT_THEME
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.setProperty('--active-aurora-rgb', activeTheme.rgb)
+    root.style.setProperty('--active-aurora-secondary-rgb', activeTheme.secondaryRgb)
+    root.style.setProperty('--active-aurora-tertiary-rgb', activeTheme.tertiaryRgb)
+    root.style.setProperty('--active-aurora-hue', activeTheme.hue)
+  }, [activeTheme])
 
   useEffect(() => {
     const update = () => {
-      const nav = navRef.current
       const progress = progressRef.current
-      if (!nav || !progress) return
-
-      if (directionRef.current === 'down') {
-        nav.style.transform = 'translateY(-100%)'
-      } else {
-        nav.style.transform = 'translateY(0)'
-      }
+      const root = document.documentElement
 
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight
       const pct = scrollHeight > 0 ? (window.scrollY / scrollHeight) * 100 : 0
-      progress.style.width = `${pct}%`
+      if (progress) progress.style.width = `${pct}%`
+
+      const experience = document.getElementById('experience')
+      if (experience) {
+        const rect = experience.getBoundingClientRect()
+        const fadeStart = window.innerHeight * 1.18
+        const fadeEnd = window.innerHeight * 0.58
+        const rawOpacity = (fadeStart - rect.top) / (fadeStart - fadeEnd)
+        const opacity = Math.max(0, Math.min(1, rawOpacity))
+        root.style.setProperty('--aurora-opacity', opacity.toFixed(3))
+      }
+
+      const probeY = window.innerHeight * 0.42
+      const nextSection = SECTION_THEMES.find(section => {
+        const el = document.getElementById(section.id)
+        if (!el) return false
+        const rect = el.getBoundingClientRect()
+        return rect.top <= probeY && rect.bottom >= probeY
+      })
+
+      if (nextSection) {
+        setActiveSection(current => current === nextSection.id ? current : nextSection.id)
+      }
     }
 
     let ticking = false
@@ -42,9 +77,14 @@ export default function Navigation() {
       }
     }
 
+    update()
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [directionRef])
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [])
 
   useEffect(() => {
     const updateTime = () => {
@@ -54,27 +94,6 @@ export default function Navigation() {
     updateTime()
     const interval = setInterval(updateTime, 1000)
     return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    const sections = NAV_ITEMS.map(item => item.href.slice(1))
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id)
-          }
-        })
-      },
-      { rootMargin: '-40% 0px -55% 0px' }
-    )
-
-    sections.forEach(id => {
-      const el = document.getElementById(id)
-      if (el) observer.observe(el)
-    })
-
-    return () => observer.disconnect()
   }, [])
 
   const handleNav = (href: string) => {
@@ -87,13 +106,26 @@ export default function Navigation() {
     <>
       {/* Progress bar */}
       <div className="fixed top-0 left-0 right-0 h-1 z-[60] bg-transparent">
-        <div ref={progressRef} className="h-full bg-cyan transition-none" style={{ width: '0%' }} />
+        <div
+          ref={progressRef}
+          className="site-progress-bar h-full"
+          style={{
+            width: '0%',
+            backgroundColor: activeTheme.color,
+            boxShadow: `0 0 18px rgba(${activeTheme.rgb}, 0.78)`,
+          }}
+        />
       </div>
 
       {/* Navigation */}
       <nav
         ref={navRef}
-        className="fixed top-1 left-0 right-0 z-50 h-12 bg-page/80 backdrop-blur-xl border-b border-[#232D3F] transition-transform duration-300"
+        className="site-nav fixed top-1 left-0 right-0 z-50 h-12 backdrop-blur-xl border-b"
+        style={{
+          backgroundColor: activeTheme.navBg,
+          borderColor: `rgba(${activeTheme.rgb}, 0.32)`,
+          boxShadow: `0 14px 38px rgba(0, 0, 0, 0.28), 0 0 34px rgba(${activeTheme.rgb}, 0.08)`,
+        }}
       >
         <div className="max-w-[1200px] mx-auto px-4 h-full flex items-center justify-between">
           {/* Desktop tabs */}
@@ -106,9 +138,18 @@ export default function Navigation() {
                   key={item.label}
                   onClick={() => handleNav(item.href)}
                   className={`relative h-full px-5 font-nav transition-colors duration-200 flex items-center gap-2
-                    ${isActive ? 'text-primary bg-surface border-b-2 border-cyan' : 'text-secondary hover:text-primary hover:bg-surface'}`}
+                    ${isActive ? 'text-primary bg-surface/80 border-b-2' : 'text-secondary hover:text-primary hover:bg-surface/70'}`}
+                  style={isActive ? { borderBottomColor: activeTheme.color } : undefined}
                 >
-                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-green" />}
+                  {isActive && (
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{
+                        backgroundColor: activeTheme.color,
+                        boxShadow: `0 0 10px rgba(${activeTheme.rgb}, 0.85)`,
+                      }}
+                    />
+                  )}
                   {item.label}
                 </button>
               )
@@ -138,7 +179,10 @@ export default function Navigation() {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden bg-surface border-b border-[#232D3F] px-4 py-4">
+          <div
+            className="md:hidden bg-surface border-b px-4 py-4"
+            style={{ borderColor: `rgba(${activeTheme.rgb}, 0.3)` }}
+          >
             {NAV_ITEMS.map(item => (
               <button
                 key={item.label}
