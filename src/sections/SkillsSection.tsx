@@ -256,14 +256,17 @@ export default function SkillsSection() {
     let height = 0
     let nodes: SkillNode[] = []
     let edges: SkillEdge[] = []
-    let animationFrameId: number
+    let animationFrameId = 0
     let time = 0
+    let lastFrame = 0
+    let isVisible = true
+    const targetFrameMs = isMobile ? 1000 / 24 : 1000 / 42
     const mouseOffset = { x: 0, y: 0 }
     let draggingIndex: number | null = null
     const dragOffset = { x: 0, y: 0 }
 
     function resize() {
-      const dpr = window.devicePixelRatio || 1
+      const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 1.5)
       const rect = cnt.getBoundingClientRect()
       width = rect.width
       height = rect.height
@@ -288,8 +291,17 @@ export default function SkillsSection() {
       return null
     }
 
-    function draw() {
+    function draw(now = 0) {
       if (!ctx) return
+      if (!isVisible) {
+        animationFrameId = 0
+        return
+      }
+      if (now - lastFrame < targetFrameMs) {
+        animationFrameId = requestAnimationFrame(draw)
+        return
+      }
+      lastFrame = now
       ctx.clearRect(0, 0, width, height)
       ctx.globalCompositeOperation = 'lighter'
       time += 0.016
@@ -333,7 +345,7 @@ export default function SkillsSection() {
         const edgeGlow = hexToRgba(edge.color, edge.alpha * 0.7)
         ctx.strokeStyle = edgeColor
         ctx.shadowColor = edgeGlow
-        ctx.shadowBlur = 6
+        ctx.shadowBlur = isMobile ? 0 : 6
         ctx.lineWidth = 1
         ctx.beginPath()
         ctx.moveTo(from.nx, from.ny)
@@ -355,7 +367,7 @@ export default function SkillsSection() {
         const nx = item.nx
         const ny = item.ny
         const baseRadius = skill.radius
-        const glow = skill.hover ? 18 : 10
+        const glow = isMobile ? 4 : skill.hover ? 18 : 10
         const ringOuter = baseRadius + (skill.hover ? 5 : 2)
         const ringInner = baseRadius - 6
 
@@ -426,7 +438,7 @@ export default function SkillsSection() {
             ctx.shadowOffsetX = 0
           }
           ctx.shadowOffsetY = 0
-          ctx.shadowBlur = skill.hover ? 16 : 8
+          ctx.shadowBlur = isMobile ? 0 : skill.hover ? 16 : 8
           ctx.fillStyle = skill.color
           ctx.fillText(skill.text, nx, ny)
           ctx.shadowBlur = 0
@@ -448,7 +460,7 @@ export default function SkillsSection() {
 
       // Noise grain
       ctx.fillStyle = 'rgba(255, 255, 255, 0.03)'
-      for (let i = 0; i < 3500; i++) {
+      for (let i = 0; i < (isMobile ? 0 : 650); i++) {
         const x = Math.random() * width
         const y = Math.random() * height
         const w = Math.random() * 2
@@ -548,7 +560,7 @@ export default function SkillsSection() {
     }
 
     resize()
-    draw()
+    animationFrameId = requestAnimationFrame(draw)
 
     // Glitch effect
     const glitchInterval = setInterval(() => {
@@ -563,6 +575,17 @@ export default function SkillsSection() {
       resize()
     })
     ro.observe(cnt)
+
+    const io = new IntersectionObserver(([entry]) => {
+      isVisible = entry?.isIntersecting ?? true
+      if (isVisible && !animationFrameId) {
+        animationFrameId = requestAnimationFrame(draw)
+      } else if (!isVisible && animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+        animationFrameId = 0
+      }
+    }, { threshold: 0.02 })
+    io.observe(cnt)
 
     cvs.addEventListener('mousemove', handleMouseMove)
     cvs.addEventListener('mousedown', handleMouseDown)
@@ -583,6 +606,7 @@ export default function SkillsSection() {
       cvs.removeEventListener('click', handleTap)
       window.removeEventListener('mouseup', handleMouseUp)
       ro.disconnect()
+      io.disconnect()
     }
   }, [isMobile])
 
@@ -595,7 +619,7 @@ export default function SkillsSection() {
   return (
     <section id="skills" className="section-padding">
       <div className="max-w-[1200px] mx-auto px-4">
-        <SectionHeader title="Technical Skills" number="05" centered />
+        <SectionHeader title="Technical Skills" number="04" centered />
       </div>
 
       <div ref={containerRef} className="relative w-full h-[640px] md:h-[600px]">

@@ -11,12 +11,11 @@ const NAV_ITEMS = [
 const SECTION_THEMES = [
   { id: 'hero', color: '#38BDF8', rgb: '56, 189, 248', secondaryRgb: '52, 211, 153', tertiaryRgb: '99, 102, 241', hue: '0deg', navBg: 'rgba(56, 189, 248, 0.1)' },
   { id: 'about', color: '#38BDF8', rgb: '56, 189, 248', secondaryRgb: '52, 211, 153', tertiaryRgb: '99, 102, 241', hue: '0deg', navBg: 'rgba(56, 189, 248, 0.12)' },
-  { id: 'experience', color: '#6366F1', rgb: '99, 102, 241', secondaryRgb: '56, 189, 248', tertiaryRgb: '236, 72, 153', hue: '34deg', navBg: 'rgba(99, 102, 241, 0.12)' },
-  { id: 'teaching', color: '#34D399', rgb: '52, 211, 153', secondaryRgb: '34, 211, 238', tertiaryRgb: '99, 102, 241', hue: '82deg', navBg: 'rgba(52, 211, 153, 0.1)' },
-  { id: 'projects', color: '#F59E0B', rgb: '245, 158, 11', secondaryRgb: '236, 72, 153', tertiaryRgb: '56, 189, 248', hue: '148deg', navBg: 'rgba(245, 158, 11, 0.11)' },
-  { id: 'skills', color: '#22D3EE', rgb: '34, 211, 238', secondaryRgb: '99, 102, 241', tertiaryRgb: '52, 211, 153', hue: '-12deg', navBg: 'rgba(34, 211, 238, 0.1)' },
-  { id: 'certificates', color: '#34D399', rgb: '52, 211, 153', secondaryRgb: '245, 158, 11', tertiaryRgb: '96, 165, 250', hue: '82deg', navBg: 'rgba(52, 211, 153, 0.1)' },
-  { id: 'contact', color: '#EC4899', rgb: '236, 72, 153', secondaryRgb: '56, 189, 248', tertiaryRgb: '245, 158, 11', hue: '222deg', navBg: 'rgba(236, 72, 153, 0.1)' },
+  { id: 'experience', color: '#34D399', rgb: '52, 211, 153', secondaryRgb: '34, 211, 238', tertiaryRgb: '99, 102, 241', hue: '82deg', navBg: 'rgba(52, 211, 153, 0.1)' },
+  { id: 'projects', color: '#6366F1', rgb: '99, 102, 241', secondaryRgb: '56, 189, 248', tertiaryRgb: '236, 72, 153', hue: '34deg', navBg: 'rgba(99, 102, 241, 0.12)' },
+  { id: 'skills', color: '#EC4899', rgb: '236, 72, 153', secondaryRgb: '56, 189, 248', tertiaryRgb: '245, 158, 11', hue: '222deg', navBg: 'rgba(236, 72, 153, 0.1)' },
+  { id: 'certificates', color: '#EF4444', rgb: '239, 68, 68', secondaryRgb: '236, 72, 153', tertiaryRgb: '245, 158, 11', hue: '190deg', navBg: 'rgba(239, 68, 68, 0.1)' },
+  { id: 'contact', color: '#F59E0B', rgb: '245, 158, 11', secondaryRgb: '236, 72, 153', tertiaryRgb: '56, 189, 248', hue: '148deg', navBg: 'rgba(245, 158, 11, 0.11)' },
 ]
 
 const DEFAULT_THEME = SECTION_THEMES[0]

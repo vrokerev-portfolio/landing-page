@@ -79,7 +79,7 @@ export default function CertificatesSection() {
   return (
     <section id="certificates" className="section-padding">
       <div className="max-w-[1200px] mx-auto px-4">
-        <SectionHeader title="Certificates" number="06" />
+        <SectionHeader title="Certificates" number="05" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {CERTIFICATES.map((cert, i) => {

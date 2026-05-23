@@ -144,6 +144,59 @@
     animation: blink 1s step-end infinite;
   }
 
+  .section-title-number {
+    color: rgba(var(--active-aurora-rgb), 0.2);
+    text-shadow: 0 0 32px rgba(var(--active-aurora-rgb), 0.16);
+    transition:
+      color 1200ms ease,
+      text-shadow 1200ms ease,
+      opacity 1200ms ease;
+  }
+
+  .editor-shell {
+    box-shadow:
+      0 24px 70px rgba(0, 0, 0, 0.28),
+      0 0 42px rgba(var(--active-aurora-rgb), 0.08);
+  }
+
+  .editor-sidebar {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 42%),
+      rgba(11, 15, 23, 0.24);
+  }
+
+  .editor-tabs-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--active-aurora-rgb), 0.55) rgba(11, 15, 23, 0.86);
+    background:
+      linear-gradient(180deg, rgba(var(--active-aurora-rgb), 0.08), transparent),
+      rgba(11, 15, 23, 0.7);
+  }
+
+  .editor-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--active-aurora-rgb), 0.52) rgba(11, 15, 23, 0.72);
+  }
+
+  .editor-tabs-scroll::-webkit-scrollbar,
+  .editor-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .editor-tabs-scroll::-webkit-scrollbar-track,
+  .editor-scroll::-webkit-scrollbar-track {
+    background: rgba(11, 15, 23, 0.86);
+    border-radius: 999px;
+  }
+
+  .editor-tabs-scroll::-webkit-scrollbar-thumb,
+  .editor-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, rgba(var(--active-aurora-rgb), 0.74), rgba(var(--active-aurora-secondary-rgb), 0.54));
+    border: 2px solid rgba(11, 15, 23, 0.86);
+    border-radius: 999px;
+  }
+
 
   .project-glow::before {
     opacity: 0.6;
@@ -530,6 +583,29 @@
 
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+
+@media (max-width: 768px) {
+  .global-aurora::before {
+    animation: none;
+    filter: blur(46px) saturate(135%) hue-rotate(var(--active-aurora-hue));
+  }
+
+  .global-aurora::after {
+    display: none;
+  }
+
+  .project-glow::before,
+  .glow-card::before {
+    animation-duration: 8s;
+    filter: none;
+  }
+
+  .cert-flip:hover .cert-flip-inner,
+  .cert-flip:focus-within .cert-flip-inner {
+    transform: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

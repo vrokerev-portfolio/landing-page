@@ -46,7 +46,7 @@ export default function ContactSection() {
     <section id="contact" className="section-padding">
       <div className="max-w-[680px] mx-auto px-4">
         <ScrollReveal>
-          <SectionHeader title="Contact" number="07" centered />
+          <SectionHeader title="Contact" number="06" centered />
         </ScrollReveal>
 
         {/* Contact Terminal */}

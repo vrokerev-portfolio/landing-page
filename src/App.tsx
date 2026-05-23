@@ -7,7 +7,6 @@ import Navigation from './sections/Navigation'
 import HeroSection from './sections/HeroSection'
 import AboutSection from './sections/AboutSection'
 import ExperienceSection from './sections/ExperienceSection'
-import TeachingSection from './sections/TeachingSection'
 import ProjectsSection from './sections/ProjectsSection'
 import SkillsSection from './sections/SkillsSection'
 import CertificatesSection from './sections/CertificatesSection'
@@ -18,24 +17,35 @@ gsap.registerPlugin(ScrollTrigger)
 
 export default function App() {
   useEffect(() => {
-    // Initialize Lenis smooth scroll
+    const shouldUseNativeScroll = window.matchMedia(
+      '(max-width: 767px), (prefers-reduced-motion: reduce)'
+    ).matches
+
+    // Lenis looks nice on desktop, but on phones it can fight native scrolling
+    // and make canvas-heavy sections feel laggy. Mobile keeps native scroll.
+    if (shouldUseNativeScroll) {
+      return
+    }
+
     const lenis = new Lenis({
-      lerp: 0.08,
-      duration: 1.2,
+      lerp: 0.09,
+      duration: 1.05,
+      smoothWheel: true,
+      touchMultiplier: 1,
     })
 
-    // Connect Lenis to GSAP ScrollTrigger
     lenis.on('scroll', ScrollTrigger.update)
 
-    gsap.ticker.add((time) => {
+    const tickerCallback = (time: number) => {
       lenis.raf(time * 1000)
-    })
+    }
 
+    gsap.ticker.add(tickerCallback)
     gsap.ticker.lagSmoothing(0)
 
     return () => {
+      gsap.ticker.remove(tickerCallback)
       lenis.destroy()
-      gsap.ticker.remove(lenis.raf as any)
     }
   }, [])
 
@@ -47,7 +57,6 @@ export default function App() {
         <HeroSection />
         <AboutSection />
         <ExperienceSection />
-        <TeachingSection />
         <ProjectsSection />
         <SkillsSection />
         <CertificatesSection />

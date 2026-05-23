@@ -69,7 +69,7 @@ export default function SectionHeader({
 
   return (
     <div ref={containerRef} className={`relative mb-16 ${centered ? 'text-center' : ''} ${className}`}>
-      <span className="absolute -top-8 right-0 font-display text-tertiary/30 select-none pointer-events-none">
+      <span className="section-title-number absolute -top-8 right-0 font-display select-none pointer-events-none">
         {number}
       </span>
       <h2 className="font-h1 text-primary section-title">

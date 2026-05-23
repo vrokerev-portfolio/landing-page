@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import {
   Folder,
   FolderOpen,
@@ -179,14 +179,14 @@ export default function ProjectsSection() {
       <div className="max-w-[1200px] mx-auto px-4">
         <SectionHeader
           title="Projects"
-          number="04"
+          number="03"
           subtitle="University projects and professional work"
         />
 
         <ScrollReveal>
-          <div className="bg-surface border border-[#232D3F] rounded-lg overflow-hidden">
+          <div className="editor-shell bg-surface border border-[#232D3F] rounded-lg overflow-hidden">
             <div className="flex flex-col lg:flex-row min-h-[520px]">
-              <div className="w-full lg:w-[280px] border-b lg:border-b-0 lg:border-r border-[#232D3F] flex-shrink-0">
+              <div className="editor-sidebar w-full lg:w-[280px] border-b lg:border-b-0 lg:border-r border-[#232D3F] flex-shrink-0">
                 <div className="px-5 py-4 border-b border-[#232D3F]">
                   <span className="font-mono-sm text-tertiary">WORKSPACE</span>
                 </div>
@@ -220,7 +220,7 @@ export default function ProjectsSection() {
                         </button>
 
                         {expandedFolders.has(folder.id) && (
-                          <div className="ml-4">
+                          <div className="ml-8 pl-3 border-l border-[#232D3F]/70">
                             {folder.files.map(file => (
                               <button
                                 key={file.id}
@@ -244,7 +244,7 @@ export default function ProjectsSection() {
               </div>
 
               <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex border-b border-[#232D3F] overflow-x-auto">
+                <div className="editor-tabs-scroll flex border-b border-[#232D3F] overflow-x-auto">
                   {openTabs.map(tab => (
                     <button
                       key={tab}
@@ -259,13 +259,13 @@ export default function ProjectsSection() {
                       <X
                         size={12}
                         className="text-tertiary hover:text-primary"
-                        onClick={(e) => { e.stopPropagation(); closeTab(tab) }}
+                        onClick={(e: MouseEvent) => { e.stopPropagation(); closeTab(tab) }}
                       />
                     </button>
                   ))}
                 </div>
 
-                <div className="flex-1 p-6 lg:p-8 overflow-auto">
+                <div className="editor-scroll flex-1 p-6 lg:p-8 overflow-auto">
                   {currentContent && (
                     <div className="animate-in fade-in duration-150">
                       {currentContent}
