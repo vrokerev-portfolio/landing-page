@@ -159,6 +159,7 @@ export default function CertificatesSection() {
                           alt={`${cert.name} certificate`}
                           className="cert-image"
                           loading="lazy"
+                          decoding="async"
                         />
                       </div>
                       <div className="cert-back-label" style={{ color: cert.color }}>

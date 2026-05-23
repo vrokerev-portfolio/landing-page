@@ -223,6 +223,7 @@ export default function ProjectsSection() {
               alt={`${project.title} preview`}
               className="w-full h-[220px] object-cover rounded-md"
               loading="lazy"
+              decoding="async"
             />
           ) : (
             <div className="h-[220px] rounded-md border border-dashed border-[#232D3F] bg-surface/60 flex items-center justify-center text-tertiary font-mono-sm">

@@ -432,6 +432,8 @@
   .section-padding {
     padding-top: 120px;
     padding-bottom: 120px;
+    content-visibility: auto;
+    contain-intrinsic-size: 900px;
   }
 
   .site-progress-bar {
@@ -484,6 +486,8 @@
     pointer-events: none;
     opacity: var(--aurora-opacity);
     overflow: hidden;
+    contain: strict;
+    transform: translateZ(0);
     transition: opacity 1200ms ease;
   }
 
@@ -502,18 +506,17 @@
     top: -34vh;
     height: 118vh;
     z-index: 0;
-    opacity: 0.82;
-    filter: blur(72px) saturate(170%) hue-rotate(var(--active-aurora-hue));
-    mix-blend-mode: screen;
+    opacity: 0.74;
+    filter: blur(56px) saturate(145%) hue-rotate(var(--active-aurora-hue));
     background:
       radial-gradient(circle at 22% 24%, rgba(71, 104, 255, 0.88), transparent 24%),
       radial-gradient(circle at 72% 24%, rgba(0, 230, 190, 0.66), transparent 28%),
       radial-gradient(circle at 36% 50%, rgba(47, 255, 139, 0.38), transparent 31%),
       radial-gradient(circle at 66% 50%, rgba(178, 78, 255, 0.5), transparent 31%),
       radial-gradient(circle at 50% 34%, rgba(255, 194, 64, 0.18), transparent 28%);
-    animation: aurora-drift 13s ease-in-out infinite alternate;
+    animation: aurora-drift 18s ease-in-out infinite alternate;
     mask-image: linear-gradient(to bottom, black 0%, black 54%, rgba(0, 0, 0, 0.42) 72%, transparent 100%);
-    transition: filter 1600ms ease, opacity 1200ms ease;
+    transition: filter 1800ms ease, opacity 1200ms ease;
   }
 
   .global-aurora::after {
@@ -534,7 +537,6 @@
       100% 100%,
       40px 40px,
       40px 40px;
-    animation: aurora-shimmer 5.8s ease-in-out infinite alternate;
     mask-image: linear-gradient(to bottom, transparent 0%, black 14%, black 62%, transparent 86%);
   }
 
@@ -1421,6 +1423,10 @@
 .glow-card-hover-only:hover::after,
 .glow-card-hover-only:focus-within::after {
   opacity: 0.22;
+}
+
+.skills-canvas-field {
+  contain: layout paint;
 }
 
 .skills-canvas-field::before {

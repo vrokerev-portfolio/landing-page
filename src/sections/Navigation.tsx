@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState } from 'react'
 
 const NAV_ITEMS = [
+  { label: 'Home', href: '#hero' },
+  { label: 'About me', href: '#about' },
   { label: 'Experience', href: '#experience' },
   { label: 'Projects', href: '#projects' },
   { label: 'Skills', href: '#skills' },
@@ -23,6 +25,7 @@ const DEFAULT_THEME = SECTION_THEMES[0]
 export default function Navigation() {
   const navRef = useRef<HTMLElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
+  const lastAuroraOpacityRef = useRef('')
   const [activeSection, setActiveSection] = useState('hero')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [time, setTime] = useState('')
@@ -37,6 +40,12 @@ export default function Navigation() {
   }, [activeTheme])
 
   useEffect(() => {
+    const themedSections = SECTION_THEMES.map(section => ({
+      ...section,
+      element: document.getElementById(section.id),
+    }))
+    const experience = document.getElementById('experience')
+
     const update = () => {
       const progress = progressRef.current
       const root = document.documentElement
@@ -45,21 +54,23 @@ export default function Navigation() {
       const pct = scrollHeight > 0 ? (window.scrollY / scrollHeight) * 100 : 0
       if (progress) progress.style.width = `${pct}%`
 
-      const experience = document.getElementById('experience')
       if (experience) {
         const rect = experience.getBoundingClientRect()
         const fadeStart = window.innerHeight * 1.18
         const fadeEnd = window.innerHeight * 0.58
         const rawOpacity = (fadeStart - rect.top) / (fadeStart - fadeEnd)
         const opacity = Math.max(0, Math.min(1, rawOpacity))
-        root.style.setProperty('--aurora-opacity', opacity.toFixed(3))
+        const nextOpacity = opacity.toFixed(2)
+        if (nextOpacity !== lastAuroraOpacityRef.current) {
+          root.style.setProperty('--aurora-opacity', nextOpacity)
+          lastAuroraOpacityRef.current = nextOpacity
+        }
       }
 
       const probeY = window.innerHeight * 0.42
-      const nextSection = SECTION_THEMES.find(section => {
-        const el = document.getElementById(section.id)
-        if (!el) return false
-        const rect = el.getBoundingClientRect()
+      const nextSection = themedSections.find(section => {
+        if (!section.element) return false
+        const rect = section.element.getBoundingClientRect()
         return rect.top <= probeY && rect.bottom >= probeY
       })
 
@@ -136,7 +147,7 @@ export default function Navigation() {
                 <button
                   key={item.label}
                   onClick={() => handleNav(item.href)}
-                  className={`relative h-full px-5 font-nav transition-colors duration-200 flex items-center gap-2
+                  className={`relative h-full px-3 lg:px-4 font-nav transition-colors duration-200 flex items-center gap-2
                     ${isActive ? 'text-primary bg-surface/80 border-b-2' : 'text-secondary hover:text-primary hover:bg-surface/70'}`}
                   style={isActive ? { borderBottomColor: activeTheme.color } : undefined}
                 >

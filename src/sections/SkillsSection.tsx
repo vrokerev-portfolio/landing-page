@@ -55,6 +55,7 @@ const SKILL_CLUSTERS: SkillCluster[] = [
       { name: 'Python', proficiency: 3 },
       { name: 'SQL', proficiency: 2 },
       { name: 'Java', proficiency: 2 },
+      { name: 'C', proficiency: 2 },
     ],
   },
   {
@@ -65,39 +66,57 @@ const SKILL_CLUSTERS: SkillCluster[] = [
       { name: 'React', proficiency: 3 },
       { name: 'Next.js', proficiency: 3 },
       { name: 'Tailwind', proficiency: 3 },
-      { name: 'Node.js', proficiency: 2 },
       { name: 'Sanity', proficiency: 2 },
       { name: 'Vite', proficiency: 2 },
+      { name: 'PWA', proficiency: 2 },
+    ],
+  },
+  {
+    name: 'Backend / APIs',
+    color: '#22D3EE',
+    center: [0.84, 0.5],
+    skills: [
+      { name: 'Node.js', proficiency: 3 },
+      { name: 'Express', proficiency: 3 },
+      { name: 'REST APIs', proficiency: 3 },
+      { name: 'Postman', proficiency: 3 },
+      { name: 'JWT', proficiency: 2 },
+      { name: 'MongoDB', proficiency: 2 },
+      { name: 'PostgreSQL', proficiency: 2 },
+      { name: 'API Testing', proficiency: 2 },
     ],
   },
   {
     name: 'Security',
     color: '#34D399',
-    center: [0.84, 0.28],
+    center: [0.84, 0.18],
     skills: [
       { name: 'eJPT', proficiency: 2 },
       { name: 'OWASP', proficiency: 3 },
       { name: 'Linux', proficiency: 3 },
       { name: 'Kali', proficiency: 2 },
       { name: 'Pentesting', proficiency: 2 },
+      { name: 'Burp Suite', proficiency: 2 },
+      { name: 'Nmap', proficiency: 2 },
     ],
   },
   {
     name: 'AI / Automation',
     color: '#EC4899',
-    center: [0.27, 0.76],
+    center: [0.18, 0.76],
     skills: [
       { name: 'n8n', proficiency: 2 },
       { name: 'AI Agents', proficiency: 2 },
       { name: 'Prompting', proficiency: 3 },
       { name: 'LLM APIs', proficiency: 2 },
       { name: 'Workflows', proficiency: 2 },
+      { name: 'OpenAI API', proficiency: 2 },
     ],
   },
   {
     name: 'Delivery / Tools',
     color: '#F59E0B',
-    center: [0.73, 0.76],
+    center: [0.64, 0.8],
     skills: [
       { name: 'Git', proficiency: 3 },
       { name: 'Vercel', proficiency: 3 },
@@ -106,6 +125,8 @@ const SKILL_CLUSTERS: SkillCluster[] = [
       { name: 'Excel', proficiency: 3 },
       { name: 'Domain Driven Design', proficiency: 2 },
       { name: 'Lighthouse', proficiency: 2 },
+      { name: 'GitHub', proficiency: 3 },
+      { name: 'VS Code', proficiency: 3 },
     ],
   },
 ]
@@ -244,11 +265,14 @@ export default function SkillsSection() {
     let animationFrameId = 0
     let time = 0
     let lastFrame = 0
+    let frame = 0
     let isVisible = true
-    const targetFrameMs = isMobile ? 1000 / 18 : 1000 / 30
+    const targetFrameMs = isMobile ? 1000 / 12 : 1000 / 22
     const mouseOffset = { x: 0, y: 0 }
     let draggingIndex: number | null = null
     const dragOffset = { x: 0, y: 0 }
+    let lastHoveredId: string | null = null
+    let tooltipFrame = 0
 
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 1.35)
@@ -263,7 +287,7 @@ export default function SkillsSection() {
       const layout = createSkillNodes(width, height)
       nodes = layout.nodes
       edges = layout.edges
-      staticStars = Array.from({ length: isMobile ? 42 : 110 }, () => ({
+      staticStars = Array.from({ length: isMobile ? 28 : 70 }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
         radius: 0.7 + Math.random() * 1.5,
@@ -299,8 +323,10 @@ export default function SkillsSection() {
       }
 
       for (let a = 0; a < nodes.length; a++) {
+        const first = nodes[a]
+        if (first.type === 'skill') continue
+
         for (let b = a + 1; b < nodes.length; b++) {
-          const first = nodes[a]
           const second = nodes[b]
           const dx = second.x - first.x
           const dy = second.y - first.y
@@ -424,6 +450,7 @@ export default function SkillsSection() {
         return
       }
       lastFrame = now
+      frame += 1
       time += 0.016
       ctx.clearRect(0, 0, width, height)
 
@@ -456,7 +483,9 @@ export default function SkillsSection() {
         node.y += node.vy
       }
 
-      applyRepulsion()
+      if (frame % (isMobile ? 6 : 4) === 0) {
+        applyRepulsion()
+      }
 
       const resolved = nodes.map(node => ({
         node,
@@ -487,16 +516,14 @@ export default function SkillsSection() {
         ctx.fill()
       }
 
-      const drawItems = [...resolved].sort((a, b) => {
-        const weight = { skill: 0, cluster: 1, core: 2 } as const
-        return weight[a.node.type] - weight[b.node.type]
-      })
-
-      for (const item of drawItems) {
-        drawNode(item.node, item.nx, item.ny)
-        const dx = mousePosRef.current.x - item.nx
-        const dy = mousePosRef.current.y - item.ny
-        item.node.hover = Math.sqrt(dx * dx + dy * dy) < item.node.radius + 12
+      for (const type of ['skill', 'cluster', 'core'] as const) {
+        for (const item of resolved) {
+          if (item.node.type !== type) continue
+          drawNode(item.node, item.nx, item.ny)
+          const dx = mousePosRef.current.x - item.nx
+          const dy = mousePosRef.current.y - item.ny
+          item.node.hover = Math.sqrt(dx * dx + dy * dy) < item.node.radius + 12
+        }
       }
 
       animationFrameId = requestAnimationFrame(draw)
@@ -509,7 +536,6 @@ export default function SkillsSection() {
       mouseOffset.x = (x - width / 2) * 0.045
       mouseOffset.y = (y - height / 2) * 0.045
       mousePosRef.current = { x, y }
-      setMousePos({ x, y })
 
       if (draggingIndex !== null) {
         const node = nodes[draggingIndex]
@@ -527,9 +553,22 @@ export default function SkillsSection() {
             break
           }
         }
-        setHoveredSkill(hovered)
+        const nextHoveredId = hovered?.id ?? null
+        if (nextHoveredId !== lastHoveredId) {
+          lastHoveredId = nextHoveredId
+          setHoveredSkill(hovered)
+        }
+        if (hovered && !tooltipFrame) {
+          tooltipFrame = requestAnimationFrame(() => {
+            setMousePos({ x, y })
+            tooltipFrame = 0
+          })
+        }
       } else {
-        setHoveredSkill(null)
+        if (lastHoveredId !== null) {
+          lastHoveredId = null
+          setHoveredSkill(null)
+        }
       }
     }
 
@@ -592,7 +631,7 @@ export default function SkillsSection() {
     }, { threshold: 0.02 })
     io.observe(cnt)
 
-    cvs.addEventListener('mousemove', handleMouseMove)
+    cvs.addEventListener('mousemove', handleMouseMove, { passive: true })
     cvs.addEventListener('mousedown', handleMouseDown)
     cvs.addEventListener('mouseleave', handleMouseLeave)
     cvs.addEventListener('pointerdown', handlePointerDown)
@@ -601,6 +640,7 @@ export default function SkillsSection() {
 
     return () => {
       cancelAnimationFrame(animationFrameId)
+      if (tooltipFrame) cancelAnimationFrame(tooltipFrame)
       cvs.removeEventListener('mousemove', handleMouseMove)
       cvs.removeEventListener('mousedown', handleMouseDown)
       cvs.removeEventListener('mouseleave', handleMouseLeave)
@@ -628,7 +668,7 @@ export default function SkillsSection() {
           subtitle="Frontend, cybersecurity, automation, and the tools I use to ship polished work."
         />
 
-        <div className="skills-legend-grid mt-8 grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="skills-legend-grid mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {SKILL_CLUSTERS.map(cluster => (
             <div key={cluster.name} className="skills-legend-card rounded-lg border border-[#232D3F] bg-surface/70 px-3 py-3">
               <div className="flex items-center gap-2">
