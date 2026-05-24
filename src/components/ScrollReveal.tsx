@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -20,10 +21,15 @@ export default function ScrollReveal({
   duration = 0.6,
 }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null)
+  const reducedMotion = useReducedMotion()
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
+    if (reducedMotion) {
+      gsap.set(el, { clearProps: 'all' })
+      return
+    }
 
     const fromVars: gsap.TweenVars = {
       opacity: 0,
@@ -44,7 +50,7 @@ export default function ScrollReveal({
         once: true,
       },
     })
-  }, [delay, direction, duration])
+  }, [delay, direction, duration, reducedMotion])
 
   return (
     <div ref={ref} className={className}>

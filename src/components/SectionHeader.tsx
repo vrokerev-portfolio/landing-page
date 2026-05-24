@@ -44,12 +44,8 @@ export default function SectionHeader({
   }, [animateTitle, reducedMotion])
 
   useEffect(() => {
-    if (!animateTitle || reducedMotion) {
-      setDisplayIndex(title.length)
-      return
-    }
+    if (!animateTitle || reducedMotion) return
     if (!isInView || hasAnimated) return
-    setDisplayIndex(0)
     let index = 0
     const typingDelay = title.length >= 18 ? 22 : 42
     const interval = window.setInterval(() => {
@@ -63,21 +59,22 @@ export default function SectionHeader({
     return () => window.clearInterval(interval)
   }, [animateTitle, reducedMotion, isInView, hasAnimated, title])
 
-  const isTyping = animateTitle && !reducedMotion && displayIndex < title.length
-  const typed = title.slice(0, displayIndex)
-  const currentChar = isTyping ? title[displayIndex] : ''
+  const visibleDisplayIndex = (!animateTitle || reducedMotion) ? title.length : displayIndex
+  const isTyping = animateTitle && !reducedMotion && visibleDisplayIndex < title.length
+  const typed = title.slice(0, visibleDisplayIndex)
+  const currentChar = isTyping ? title[visibleDisplayIndex] : ''
 
   return (
     <div ref={containerRef} className={`relative mb-16 ${centered ? 'text-center' : ''} ${className}`}>
       <span className="section-title-number absolute -top-8 right-0 font-display select-none pointer-events-none">
         {number}
       </span>
-      <h2 className="font-h1 text-primary section-title">
-        <span className="section-title-text">
+      <h2 className="font-h1 text-primary section-title" aria-label={title}>
+        <span className="section-title-text" aria-hidden="true">
           <span className="section-title-static">{typed}</span>
           {currentChar && <span className="section-title-active">{currentChar}</span>}
         </span>
-        {animateTitle && !reducedMotion && <span className="section-title-cursor">_</span>}
+        {animateTitle && !reducedMotion && <span className="section-title-cursor" aria-hidden="true">_</span>}
       </h2>
       {subtitle && (
         <p className={`font-body text-secondary mt-4 max-w-xl ${centered ? 'mx-auto' : ''}`}>{subtitle}</p>

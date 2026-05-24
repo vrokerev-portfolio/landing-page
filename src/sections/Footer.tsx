@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="max-w-[1200px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Left */}
         <div className="font-mono-sm text-tertiary">
-          © 2025 Victor Meneses. All systems operational.
+          © 2026 Victor Meneses. All systems operational.
         </div>
 
         {/* Center */}

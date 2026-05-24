@@ -1,5 +1,6 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, type CSSProperties } from 'react'
 import SectionHeader from '../components/SectionHeader'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 
 interface SkillNode {
   id: string
@@ -18,6 +19,7 @@ interface SkillNode {
   hover: boolean
   cluster: string
   type: 'skill' | 'cluster' | 'core'
+  active?: boolean
 }
 
 interface SkillEdge {
@@ -41,14 +43,13 @@ interface StaticStar {
   y: number
   radius: number
   alpha: number
-  phase: number
 }
 
 const SKILL_CLUSTERS: SkillCluster[] = [
   {
-    name: 'Languages',
+    name: 'Programming',
     color: '#38BDF8',
-    center: [0.16, 0.28],
+    center: [0.18, 0.31],
     skills: [
       { name: 'TypeScript', proficiency: 3 },
       { name: 'JavaScript', proficiency: 3 },
@@ -66,15 +67,15 @@ const SKILL_CLUSTERS: SkillCluster[] = [
       { name: 'React', proficiency: 3 },
       { name: 'Next.js', proficiency: 3 },
       { name: 'Tailwind', proficiency: 3 },
-      { name: 'Sanity', proficiency: 2 },
+      { name: 'Content UI', proficiency: 2 },
       { name: 'Vite', proficiency: 2 },
       { name: 'PWA', proficiency: 2 },
     ],
   },
   {
-    name: 'Backend / APIs',
+    name: 'Backend APIs',
     color: '#22D3EE',
-    center: [0.84, 0.5],
+    center: [0.8, 0.62],
     skills: [
       { name: 'Node.js', proficiency: 3 },
       { name: 'Express', proficiency: 3 },
@@ -87,9 +88,9 @@ const SKILL_CLUSTERS: SkillCluster[] = [
     ],
   },
   {
-    name: 'Security',
+    name: 'Cybersecurity',
     color: '#34D399',
-    center: [0.84, 0.18],
+    center: [0.82, 0.29],
     skills: [
       { name: 'eJPT', proficiency: 2 },
       { name: 'OWASP', proficiency: 3 },
@@ -101,9 +102,9 @@ const SKILL_CLUSTERS: SkillCluster[] = [
     ],
   },
   {
-    name: 'AI / Automation',
+    name: 'Automation & AI',
     color: '#EC4899',
-    center: [0.18, 0.76],
+    center: [0.22, 0.72],
     skills: [
       { name: 'n8n', proficiency: 2 },
       { name: 'AI Agents', proficiency: 2 },
@@ -114,9 +115,9 @@ const SKILL_CLUSTERS: SkillCluster[] = [
     ],
   },
   {
-    name: 'Delivery / Tools',
+    name: 'Dev Workflow',
     color: '#F59E0B',
-    center: [0.64, 0.8],
+    center: [0.58, 0.82],
     skills: [
       { name: 'Git', proficiency: 3 },
       { name: 'Vercel', proficiency: 3 },
@@ -131,18 +132,52 @@ const SKILL_CLUSTERS: SkillCluster[] = [
   },
 ]
 
-function createSkillNodes(width: number, height: number) {
+function clampNumber(value: number, min: number, max: number) {
+  if (min > max) return (min + max) / 2
+  return Math.min(Math.max(value, min), max)
+}
+
+function easeOutCubic(value: number) {
+  return 1 - Math.pow(1 - value, 3)
+}
+
+function getActiveClusterCenter(width: number, height: number, cluster: SkillCluster, ringRadius: number) {
+  const horizontalMargin = Math.min(width * 0.42, ringRadius + 112)
+  const verticalMargin = Math.min(height * 0.36, ringRadius * 0.82 + 76)
+
+  return {
+    x: clampNumber(cluster.center[0] * width, horizontalMargin, width - horizontalMargin),
+    y: clampNumber(cluster.center[1] * height, verticalMargin, height - verticalMargin),
+  }
+}
+
+function createSkillNodes(width: number, height: number, activeClusterName: string | null) {
   const nodes: SkillNode[] = []
   const edges: SkillEdge[] = []
   const minDimension = Math.min(width, height)
+  const activeCluster = SKILL_CLUSTERS.find(cluster => cluster.name === activeClusterName)
+  const activeRingRadius = Math.max(96, Math.min(136, minDimension * 0.18))
+  const activeCenter = activeCluster ? getActiveClusterCenter(width, height, activeCluster, activeRingRadius) : null
+  const baseCore = { x: width * 0.5, y: height * 0.5 }
+
+  if (activeCenter) {
+    const dx = activeCenter.x - baseCore.x
+    const dy = activeCenter.y - baseCore.y
+    const distance = Math.max(1, Math.sqrt(dx * dx + dy * dy))
+    const coreShift = Math.min(minDimension * 0.28, 118)
+    baseCore.x = clampNumber(baseCore.x - (dx / distance) * coreShift, 92, width - 92)
+    baseCore.y = clampNumber(baseCore.y - (dy / distance) * coreShift, 72, height - 72)
+  }
+
+  const coreStart = activeCenter ? { x: width * 0.5, y: height * 0.5 } : baseCore
 
   const coreNode: SkillNode = {
     id: 'core',
     text: 'Victor Stack',
-    x: width * 0.5,
-    y: height * 0.5,
-    baseX: width * 0.5,
-    baseY: height * 0.5,
+    x: coreStart.x,
+    y: coreStart.y,
+    baseX: baseCore.x,
+    baseY: baseCore.y,
     vx: 0,
     vy: 0,
     size: 13.5,
@@ -160,55 +195,74 @@ function createSkillNodes(width: number, height: number) {
   SKILL_CLUSTERS.forEach((cluster, clusterOrder) => {
     const clusterX = cluster.center[0] * width
     const clusterY = cluster.center[1] * height
-    const clusterNode: SkillNode = {
-      id: `cluster-${cluster.name}`,
-      text: cluster.name,
-      x: clusterX,
-      y: clusterY,
-      baseX: clusterX,
-      baseY: clusterY,
-      vx: 0,
-      vy: 0,
-      size: 11.8,
-      radius: 19,
-      color: cluster.color,
-      proficiency: 0,
-      phase: clusterOrder * 1.7,
-      hover: false,
-      cluster: cluster.name,
-      type: 'cluster',
+    const isActiveCluster = cluster.name === activeClusterName
+    const skillCount = cluster.skills.length
+    const ringRadius = isActiveCluster
+      ? activeRingRadius
+      : Math.max(82, Math.min(122, minDimension * 0.15))
+
+    if (!isActiveCluster) {
+      const clusterNode: SkillNode = {
+        id: `cluster-${cluster.name}`,
+        text: cluster.name,
+        x: clusterX,
+        y: clusterY,
+        baseX: clusterX,
+        baseY: clusterY,
+        vx: 0,
+        vy: 0,
+        size: 11.6,
+        radius: 22,
+        color: cluster.color,
+        proficiency: 0,
+        phase: clusterOrder * 1.7,
+        hover: false,
+        cluster: cluster.name,
+        type: 'cluster',
+      }
+
+      const clusterIndex = nodes.length
+      nodes.push(clusterNode)
+      edges.push({
+        from: 0,
+        to: clusterIndex,
+        color: cluster.color,
+        alpha: 0.32,
+        phase: Math.random(),
+        speed: 0.24 + Math.random() * 0.14,
+      })
+      return
     }
 
-    const clusterIndex = nodes.length
-    nodes.push(clusterNode)
-    edges.push({
-      from: 0,
-      to: clusterIndex,
-      color: cluster.color,
-      alpha: 0.32,
-      phase: Math.random(),
-      speed: 0.24 + Math.random() * 0.14,
-    })
-
-    const skillCount = cluster.skills.length
-    const ringRadius = Math.max(56, Math.min(86, minDimension * 0.12))
+    const skillCenter = activeCenter ?? { x: clusterX, y: clusterY }
     cluster.skills.forEach((skill, i) => {
       const angle = (Math.PI * 2 * i) / skillCount - Math.PI / 2 + (clusterOrder % 2) * 0.18
-      const radiusOffset = (i % 2 === 0 ? -10 : 12)
-      const baseX = clusterX + Math.cos(angle) * (ringRadius + radiusOffset)
-      const baseY = clusterY + Math.sin(angle) * (ringRadius * 0.76 + radiusOffset * 0.4)
+      const radiusOffset = i % 2 === 0 ? -14 : 18
+      const labelMargin = Math.max(58, skill.name.length * 4.8 + 28)
+      const baseX = clampNumber(
+        skillCenter.x + Math.cos(angle) * (ringRadius + radiusOffset),
+        labelMargin,
+        width - labelMargin
+      )
+      const baseY = clampNumber(
+        skillCenter.y + Math.sin(angle) * (ringRadius * 0.78 + radiusOffset * 0.4),
+        38,
+        height - 38
+      )
+      const startX = skillCenter.x + Math.cos(angle) * 24
+      const startY = skillCenter.y + Math.sin(angle) * 18
 
       const skillNode: SkillNode = {
         id: `skill-${cluster.name}-${skill.name}`,
         text: skill.name,
-        x: baseX,
-        y: baseY,
+        x: startX,
+        y: startY,
         baseX,
         baseY,
         vx: 0,
         vy: 0,
-        size: 8.3 + skill.proficiency * 1.45,
-        radius: 7.8 + skill.proficiency * 1.7,
+        size: 9 + skill.proficiency * 1.2,
+        radius: 12 + skill.proficiency * 1.2,
         color: cluster.color,
         proficiency: skill.proficiency,
         phase: Math.random() * Math.PI * 2,
@@ -220,10 +274,10 @@ function createSkillNodes(width: number, height: number) {
       const skillIndex = nodes.length
       nodes.push(skillNode)
       edges.push({
-        from: clusterIndex,
+        from: 0,
         to: skillIndex,
         color: cluster.color,
-        alpha: 0.2,
+        alpha: 0.16,
         phase: Math.random(),
         speed: 0.32 + Math.random() * 0.16,
       })
@@ -240,7 +294,8 @@ export default function SkillsSection() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const mousePosRef = useRef({ x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(false)
-  const activeNodeIdRef = useRef<string | null>(null)
+  const [selectedCluster, setSelectedCluster] = useState<string | null>(null)
+  const reducedMotion = useReducedMotion()
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -256,6 +311,8 @@ export default function SkillsSection() {
     const context = cvs.getContext('2d')
     if (!context) return
     const ctx = context
+    const starLayer = document.createElement('canvas')
+    const starCtx = starLayer.getContext('2d')
 
     let width = 0
     let height = 0
@@ -267,12 +324,29 @@ export default function SkillsSection() {
     let lastFrame = 0
     let frame = 0
     let isVisible = true
-    const targetFrameMs = isMobile ? 1000 / 12 : 1000 / 22
+    const targetFrameMs = reducedMotion ? 1000 / 4 : isMobile ? 1000 / 12 : 1000 / 22
     const mouseOffset = { x: 0, y: 0 }
     let draggingIndex: number | null = null
     const dragOffset = { x: 0, y: 0 }
     let lastHoveredId: string | null = null
     let tooltipFrame = 0
+    const transitionStartedAt = performance.now()
+
+    function paintStaticStars(dpr: number) {
+      if (!starCtx) return
+      starLayer.width = Math.max(1, Math.floor(width * dpr))
+      starLayer.height = Math.max(1, Math.floor(height * dpr))
+      starCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      starCtx.clearRect(0, 0, width, height)
+      starCtx.globalCompositeOperation = 'source-over'
+
+      for (const star of staticStars) {
+        starCtx.beginPath()
+        starCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2)
+        starCtx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`
+        starCtx.fill()
+      }
+    }
 
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 1.35)
@@ -284,16 +358,16 @@ export default function SkillsSection() {
       cvs.style.width = `${width}px`
       cvs.style.height = `${height}px`
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      const layout = createSkillNodes(width, height)
+      const layout = createSkillNodes(width, height, selectedCluster)
       nodes = layout.nodes
       edges = layout.edges
-      staticStars = Array.from({ length: isMobile ? 28 : 70 }, () => ({
+      staticStars = Array.from({ length: isMobile ? 22 : 56 }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
         radius: 0.7 + Math.random() * 1.5,
         alpha: 0.12 + Math.random() * 0.28,
-        phase: Math.random() * Math.PI * 2,
       }))
+      paintStaticStars(dpr)
     }
 
     function getNodeAt(x: number, y: number) {
@@ -301,10 +375,22 @@ export default function SkillsSection() {
         const node = nodes[i]
         const dx = x - node.x
         const dy = y - node.y
-        const hitRadius = node.radius + 12
+        const hitRadius = nodeSpacingRadius(node)
         if (Math.sqrt(dx * dx + dy * dy) < hitRadius) return i
       }
       return null
+    }
+
+    function nodeSpacingRadius(node: SkillNode) {
+      const textRadius = node.text.length * (node.type === 'skill' ? 5.1 : 5.8)
+      return Math.max(node.radius + 16, textRadius)
+    }
+
+    function clampNodeToCanvas(node: SkillNode) {
+      const marginX = Math.max(50, nodeSpacingRadius(node) + 22)
+      const marginY = node.type === 'core' ? 44 : 34
+      node.x = clampNumber(node.x, marginX, width - marginX)
+      node.y = clampNumber(node.y, marginY, height - marginY)
     }
 
     function applyRepulsion() {
@@ -314,9 +400,9 @@ export default function SkillsSection() {
         const dx = node.x - core.x
         const dy = node.y - core.y
         const distance = Math.max(1, Math.sqrt(dx * dx + dy * dy))
-        const minDistance = node.type === 'cluster' ? 92 : 72
+        const minDistance = node.type === 'cluster' ? 112 : 104
         if (distance < minDistance) {
-          const push = (minDistance - distance) * (node.type === 'cluster' ? 0.038 : 0.026)
+          const push = (minDistance - distance) * (node.type === 'cluster' ? 0.04 : 0.048)
           node.vx += (dx / distance) * push
           node.vy += (dy / distance) * push
         }
@@ -324,7 +410,6 @@ export default function SkillsSection() {
 
       for (let a = 0; a < nodes.length; a++) {
         const first = nodes[a]
-        if (first.type === 'skill') continue
 
         for (let b = a + 1; b < nodes.length; b++) {
           const second = nodes[b]
@@ -333,11 +418,12 @@ export default function SkillsSection() {
           const distance = Math.max(1, Math.sqrt(dx * dx + dy * dy))
           const involvesCore = first.type === 'core' || second.type === 'core'
           const involvesCluster = first.type === 'cluster' || second.type === 'cluster'
+          const bothSkills = first.type === 'skill' && second.type === 'skill'
           const sameCluster = first.cluster === second.cluster
-          const minDistance = first.radius + second.radius + (involvesCore ? 42 : involvesCluster ? 24 : sameCluster ? 8 : 18)
+          const minDistance = nodeSpacingRadius(first) + nodeSpacingRadius(second) + (involvesCore ? 42 : involvesCluster ? 20 : bothSkills ? 18 : sameCluster ? 10 : 16)
           if (distance >= minDistance) continue
 
-          const strength = (minDistance - distance) * (involvesCore ? 0.03 : 0.018)
+          const strength = (minDistance - distance) * (involvesCore ? 0.04 : bothSkills ? 0.032 : 0.022)
           const nx = dx / distance
           const ny = dy / distance
 
@@ -351,93 +437,118 @@ export default function SkillsSection() {
           }
         }
       }
+
+      for (const node of nodes) {
+        if (draggingIndex !== nodes.indexOf(node)) {
+          clampNodeToCanvas(node)
+        }
+      }
     }
 
-    function drawNode(node: SkillNode, nx: number, ny: number) {
-      const baseRadius = node.radius
+    function roundedRect(x: number, y: number, w: number, h: number, r: number) {
+      const radius = Math.min(r, w / 2, h / 2)
+      ctx.beginPath()
+      ctx.moveTo(x + radius, y)
+      ctx.lineTo(x + w - radius, y)
+      ctx.quadraticCurveTo(x + w, y, x + w, y + radius)
+      ctx.lineTo(x + w, y + h - radius)
+      ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h)
+      ctx.lineTo(x + radius, y + h)
+      ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
+      ctx.lineTo(x, y + radius)
+      ctx.quadraticCurveTo(x, y, x + radius, y)
+      ctx.closePath()
+    }
+
+    function getNodeVisualSize(node: SkillNode, scale = 1) {
       const isCore = node.type === 'core'
       const isCluster = node.type === 'cluster'
-      const ringOuter = baseRadius + (node.hover ? 4 : isCore ? 8 : isCluster ? 5 : 1.5)
-      const glow = isMobile ? 2 : node.hover ? 15 : isCore ? 18 : isCluster ? 11 : 6
+      const isSkill = node.type === 'skill'
+      const fontSize = node.size * (node.hover ? 1.03 : 1) * scale
+      const minWidth = (isCore ? 126 : isCluster ? 106 : 74) * scale
+      const height = (isCore ? 42 : isCluster ? 36 : 28) * scale
 
       ctx.save()
-      ctx.shadowColor = node.color
-      ctx.shadowBlur = glow
-
-      const gradient = ctx.createRadialGradient(nx - 3, ny - 5, 2, nx, ny, ringOuter)
-      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.12)')
-      gradient.addColorStop(0.35, 'rgba(17, 24, 39, 0.66)')
-      gradient.addColorStop(1, 'rgba(11, 15, 23, 0.94)')
-      ctx.beginPath()
-      ctx.arc(nx, ny, ringOuter - 1.5, 0, Math.PI * 2)
-      ctx.fillStyle = gradient
-      ctx.fill()
-
-      ctx.beginPath()
-      ctx.arc(nx, ny, ringOuter, 0, Math.PI * 2)
-      ctx.strokeStyle = node.color
-      ctx.lineWidth = isCore ? 2.6 : isCluster ? 2.2 : 1.35
-      if (isCluster) ctx.setLineDash([5, 5])
-      ctx.stroke()
-      ctx.setLineDash([])
-
-      if (isCore || isCluster) {
-        const haloRadius = ringOuter + (isCore ? 14 : 8)
-        ctx.beginPath()
-        ctx.arc(nx, ny, haloRadius, 0, Math.PI * 2)
-        ctx.strokeStyle = hexToRgba(node.color, isCore ? 0.26 : 0.18)
-        ctx.lineWidth = 1
-        ctx.stroke()
-
-        const rays = isCore ? 8 : 6
-        const innerRay = ringOuter + 4
-        const outerRay = ringOuter + (isCore ? 17 : 11)
-        ctx.beginPath()
-        for (let ray = 0; ray < rays; ray++) {
-          const angle = time * (isCore ? 0.22 : 0.16) + node.phase + (Math.PI * 2 * ray) / rays
-          ctx.moveTo(nx + Math.cos(angle) * innerRay, ny + Math.sin(angle) * innerRay)
-          ctx.lineTo(nx + Math.cos(angle) * outerRay, ny + Math.sin(angle) * outerRay)
-        }
-        ctx.strokeStyle = hexToRgba(node.color, isCore ? 0.42 : 0.28)
-        ctx.lineWidth = isCore ? 1.4 : 1
-        ctx.stroke()
-      }
-
-      if (node.type === 'skill') {
-        const ringRadius = baseRadius + 5
-        for (let i = 0; i < 3; i++) {
-          ctx.beginPath()
-          ctx.strokeStyle = i < node.proficiency ? node.color : 'rgba(35, 45, 63, 0.62)'
-          ctx.lineWidth = 1.25
-          const start = (-Math.PI / 2) + (i * (Math.PI * 2)) / 3
-          const end = start + (Math.PI * 2) / 3 - 0.2
-          ctx.arc(nx, ny, ringRadius, start, end)
-          ctx.stroke()
-        }
-      }
-
-      const tickAngle = time * (isCore ? 0.58 : isCluster ? 0.48 : 0.72) + node.phase
-      ctx.beginPath()
-      ctx.arc(nx + Math.cos(tickAngle) * (ringOuter + 4), ny + Math.sin(tickAngle) * (ringOuter + 4), isCore ? 2.2 : 1.6, 0, Math.PI * 2)
-      ctx.fillStyle = node.color
-      ctx.fill()
+      ctx.font = `${fontSize}px "JetBrains Mono"`
+      const width = Math.max(minWidth, ctx.measureText(node.text).width + (isSkill ? 30 : 38) * scale)
       ctx.restore()
 
-      const showLabel = !isMobile || isCore || isCluster || activeNodeIdRef.current === node.id
+      return { width, height, fontSize }
+    }
+
+    function getLineAnchor(node: SkillNode, x: number, y: number, towardX: number, towardY: number, padding = 10) {
+      const { width, height } = getNodeVisualSize(node)
+      const dx = towardX - x
+      const dy = towardY - y
+      const absX = Math.abs(dx)
+      const absY = Math.abs(dy)
+      if (absX < 0.001 && absY < 0.001) return { x, y }
+
+      const tx = absX > 0.001 ? (width / 2 + padding) / absX : Number.POSITIVE_INFINITY
+      const ty = absY > 0.001 ? (height / 2 + padding) / absY : Number.POSITIVE_INFINITY
+      const t = Math.min(tx, ty)
+
+      return {
+        x: x + dx * t,
+        y: y + dy * t,
+      }
+    }
+
+    function drawNode(node: SkillNode, nx: number, ny: number, appearance = 1) {
+      if (appearance <= 0.02) return
+      const isCore = node.type === 'core'
+      const isCluster = node.type === 'cluster'
+      const isSkill = node.type === 'skill'
+      const isActive = Boolean(node.active)
+      const scale = isSkill ? 0.88 + appearance * 0.12 : 1
+      const { width, height, fontSize } = getNodeVisualSize(node, scale)
+      const labelColor = isCore ? '#F0F4F8' : node.color
+
+      ctx.save()
+      ctx.globalAlpha = appearance
+      ctx.font = `${fontSize}px "JetBrains Mono"`
+      const x = nx - width / 2
+      const y = ny - height / 2
+      const borderAlpha = node.hover || isActive ? 0.9 : isSkill ? 0.48 : 0.56
+      const fillAlpha = isCore ? 0.1 : isActive ? 0.18 : isSkill ? 0.12 : 0.09
+
+      if ((isCore || isCluster) && (isActive || node.hover)) {
+        roundedRect(x - 7, y - 7, width + 14, height + 14, 16)
+        ctx.fillStyle = hexToRgba(node.color, isActive ? 0.08 : 0.05)
+        ctx.fill()
+        ctx.strokeStyle = hexToRgba(node.color, isActive ? 0.24 : 0.16)
+        ctx.lineWidth = 1
+        ctx.stroke()
+      }
+
+      roundedRect(x, y, width, height, 12)
+      ctx.fillStyle = isCore ? 'rgba(11, 15, 23, 0.96)' : 'rgba(11, 15, 23, 0.88)'
+      ctx.fill()
+
+      roundedRect(x, y, width, height, 12)
+      ctx.fillStyle = isCore ? 'rgba(240, 244, 248, 0.08)' : hexToRgba(node.color, fillAlpha)
+      ctx.fill()
+
+      ctx.strokeStyle = isCore ? 'rgba(240, 244, 248, 0.7)' : hexToRgba(node.color, borderAlpha)
+      ctx.lineWidth = isCore ? 1.6 : isActive ? 1.8 : 1.2
+      ctx.stroke()
+
+      if (isSkill) {
+        ctx.beginPath()
+        ctx.arc(x + 13, ny, 3.2, 0, Math.PI * 2)
+        ctx.fillStyle = node.color
+        ctx.fill()
+      }
+
+      const showLabel = !isMobile || isCore || isCluster || node.cluster === selectedCluster
       if (showLabel) {
-        const fontSize = node.size * (node.hover ? 1.04 : 1)
-        ctx.save()
-        ctx.font = `${fontSize}px "JetBrains Mono"`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'
-        ctx.fillText(node.text, nx + 1, ny + 1)
-        ctx.shadowBlur = isMobile ? 0 : node.hover ? 14 : isCore ? 10 : 6
-        ctx.shadowColor = node.color
-        ctx.fillStyle = isCore ? '#F0F4F8' : node.color
+        ctx.fillStyle = labelColor
         ctx.fillText(node.text, nx, ny)
-        ctx.restore()
       }
+
+      ctx.restore()
     }
 
     function draw(now = 0) {
@@ -452,15 +563,12 @@ export default function SkillsSection() {
       lastFrame = now
       frame += 1
       time += 0.016
+      const enterProgress = easeOutCubic(Math.min(1, (now - transitionStartedAt) / 620))
       ctx.clearRect(0, 0, width, height)
 
       ctx.globalCompositeOperation = 'source-over'
-      for (const star of staticStars) {
-        const alpha = star.alpha + Math.sin(time * 0.9 + star.phase) * 0.06
-        ctx.beginPath()
-        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.04, alpha)})`
-        ctx.fill()
+      if (starLayer.width && starLayer.height) {
+        ctx.drawImage(starLayer, 0, 0, width, height)
       }
 
       for (let i = 0; i < nodes.length; i++) {
@@ -472,7 +580,7 @@ export default function SkillsSection() {
         }
 
         const spring = node.type === 'core' ? 0.018 : node.type === 'cluster' ? 0.042 : 0.052
-        const drift = node.type === 'core' ? 2.5 : node.type === 'cluster' ? 5 : 6
+        const drift = reducedMotion ? 0 : node.type === 'core' ? 1.6 : node.type === 'cluster' ? 3.4 : 4.6
         const targetX = node.baseX + Math.sin(time * 0.26 + node.phase) * drift
         const targetY = node.baseY + Math.cos(time * 0.22 + node.phase) * drift
         node.vx += (targetX - node.x) * spring
@@ -481,6 +589,7 @@ export default function SkillsSection() {
         node.vy *= 0.82
         node.x += node.vx
         node.y += node.vy
+        clampNodeToCanvas(node)
       }
 
       if (frame % (isMobile ? 6 : 4) === 0) {
@@ -493,36 +602,43 @@ export default function SkillsSection() {
         ny: node.y + mouseOffset.y * (node.size / 28) * 0.12,
       }))
 
-      ctx.globalCompositeOperation = 'lighter'
+      ctx.globalCompositeOperation = 'source-over'
       for (const edge of edges) {
         const from = resolved[edge.from]
         const to = resolved[edge.to]
         if (!from || !to) continue
+        const isCoreEdge = from.node.type === 'core'
+        const isActiveCoreEdge = isCoreEdge && to.node.cluster === selectedCluster
+        const edgeAppearance = to.node.type === 'skill' ? enterProgress : 1
+        if (edgeAppearance <= 0.03) continue
+        const start = getLineAnchor(from.node, from.nx, from.ny, to.nx, to.ny)
+        const end = getLineAnchor(to.node, to.nx, to.ny, from.nx, from.ny)
         ctx.save()
-        ctx.strokeStyle = hexToRgba(edge.color, edge.alpha)
-        ctx.shadowColor = hexToRgba(edge.color, edge.alpha * 0.8)
-        ctx.shadowBlur = isMobile ? 0 : 4
-        ctx.lineWidth = edge.from === 0 ? 1.2 : 0.9
+        ctx.strokeStyle = hexToRgba(edge.color, (isCoreEdge ? (isActiveCoreEdge ? 0.2 : 0.12) : edge.alpha) * edgeAppearance)
+        ctx.shadowBlur = 0
+        ctx.lineWidth = isCoreEdge ? (isActiveCoreEdge ? 1 : 0.75) : 0.8
         ctx.beginPath()
-        ctx.moveTo(from.nx, from.ny)
-        ctx.lineTo(to.nx, to.ny)
+        ctx.moveTo(start.x, start.y)
+        ctx.lineTo(end.x, end.y)
         ctx.stroke()
         ctx.restore()
 
-        const packetT = (time * edge.speed + edge.phase) % 1
-        ctx.beginPath()
-        ctx.arc(from.nx + (to.nx - from.nx) * packetT, from.ny + (to.ny - from.ny) * packetT, isMobile ? 1.2 : 1.7, 0, Math.PI * 2)
-        ctx.fillStyle = hexToRgba(edge.color, 0.72)
-        ctx.fill()
+        if (!isMobile && !reducedMotion && !isCoreEdge) {
+          const packetT = (time * edge.speed + edge.phase) % 1
+          ctx.beginPath()
+          ctx.arc(from.nx + (to.nx - from.nx) * packetT, from.ny + (to.ny - from.ny) * packetT, 1.35, 0, Math.PI * 2)
+          ctx.fillStyle = hexToRgba(edge.color, 0.58)
+          ctx.fill()
+        }
       }
 
-      for (const type of ['skill', 'cluster', 'core'] as const) {
+      for (const type of ['cluster', 'core', 'skill'] as const) {
         for (const item of resolved) {
           if (item.node.type !== type) continue
-          drawNode(item.node, item.nx, item.ny)
+          drawNode(item.node, item.nx, item.ny, item.node.type === 'skill' ? enterProgress : 1)
           const dx = mousePosRef.current.x - item.nx
           const dy = mousePosRef.current.y - item.ny
-          item.node.hover = Math.sqrt(dx * dx + dy * dy) < item.node.radius + 12
+          item.node.hover = Math.sqrt(dx * dx + dy * dy) < nodeSpacingRadius(item.node)
         }
       }
 
@@ -548,7 +664,7 @@ export default function SkillsSection() {
         for (const skill of nodes) {
           const dx = x - skill.x
           const dy = y - skill.y
-          if (Math.sqrt(dx * dx + dy * dy) < skill.radius + 12) {
+          if (Math.sqrt(dx * dx + dy * dy) < nodeSpacingRadius(skill)) {
             hovered = skill.type === 'skill' ? skill : null
             break
           }
@@ -572,6 +688,20 @@ export default function SkillsSection() {
       }
     }
 
+    function handleCanvasClick(e: MouseEvent) {
+      const rect = cvs.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      const index = getNodeAt(x, y)
+      if (index === null) return
+      const node = nodes[index]
+      if (node.type === 'cluster') {
+        setSelectedCluster(current => (current === node.cluster ? null : node.cluster))
+      } else if (node.type === 'core') {
+        setSelectedCluster(null)
+      }
+    }
+
     function handleMouseDown(e: MouseEvent) {
       const rect = cvs.getBoundingClientRect()
       const x = e.clientX - rect.left
@@ -581,28 +711,6 @@ export default function SkillsSection() {
       draggingIndex = index
       dragOffset.x = nodes[index].x - x
       dragOffset.y = nodes[index].y - y
-    }
-
-    function handlePointerDown(e: PointerEvent) {
-      if (e.pointerType !== 'touch') return
-      const rect = cvs.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-      const index = getNodeAt(x, y)
-      if (index === null) return
-      const node = nodes[index]
-      activeNodeIdRef.current = activeNodeIdRef.current === node.id ? null : node.id
-    }
-
-    function handleTap(e: MouseEvent) {
-      if (!isMobile) return
-      const rect = cvs.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-      const index = getNodeAt(x, y)
-      if (index === null) return
-      const node = nodes[index]
-      activeNodeIdRef.current = activeNodeIdRef.current === node.id ? null : node.id
     }
 
     function handleMouseUp() {
@@ -634,8 +742,7 @@ export default function SkillsSection() {
     cvs.addEventListener('mousemove', handleMouseMove, { passive: true })
     cvs.addEventListener('mousedown', handleMouseDown)
     cvs.addEventListener('mouseleave', handleMouseLeave)
-    cvs.addEventListener('pointerdown', handlePointerDown)
-    cvs.addEventListener('click', handleTap)
+    cvs.addEventListener('click', handleCanvasClick)
     window.addEventListener('mouseup', handleMouseUp)
 
     return () => {
@@ -644,13 +751,12 @@ export default function SkillsSection() {
       cvs.removeEventListener('mousemove', handleMouseMove)
       cvs.removeEventListener('mousedown', handleMouseDown)
       cvs.removeEventListener('mouseleave', handleMouseLeave)
-      cvs.removeEventListener('pointerdown', handlePointerDown)
-      cvs.removeEventListener('click', handleTap)
+      cvs.removeEventListener('click', handleCanvasClick)
       window.removeEventListener('mouseup', handleMouseUp)
       ro.disconnect()
       io.disconnect()
     }
-  }, [isMobile])
+  }, [isMobile, selectedCluster, reducedMotion])
 
   const proficiencyLabel = (level: number) => {
     if (level >= 3) return 'Advanced'
@@ -670,19 +776,26 @@ export default function SkillsSection() {
 
         <div className="skills-legend-grid mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {SKILL_CLUSTERS.map(cluster => (
-            <div key={cluster.name} className="skills-legend-card rounded-lg border border-[#232D3F] bg-surface/70 px-3 py-3">
+            <button
+              key={cluster.name}
+              type="button"
+              aria-pressed={selectedCluster === cluster.name}
+              className={`skills-legend-card rounded-lg border border-[#232D3F] bg-surface/70 px-3 py-3 text-left transition-colors ${selectedCluster === cluster.name ? 'is-active' : ''}`}
+              style={{ '--skill-color': cluster.color } as CSSProperties}
+              onClick={() => setSelectedCluster(current => (current === cluster.name ? null : cluster.name))}
+            >
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cluster.color, boxShadow: `0 0 12px ${cluster.color}` }} />
                 <span className="font-mono-sm text-primary">{cluster.name}</span>
               </div>
-              <div className="font-mono-sm text-tertiary mt-2">{cluster.skills.length} nodes</div>
-            </div>
+              <div className="font-mono-sm text-tertiary mt-2">{cluster.skills.length} skills</div>
+            </button>
           ))}
         </div>
       </div>
 
       <div ref={containerRef} className="skills-canvas-field relative w-full h-[660px] md:h-[620px]">
-        <canvas ref={canvasRef} className="absolute inset-0 touch-manipulation" />
+        <canvas ref={canvasRef} className="absolute inset-0 touch-manipulation" aria-hidden="true" />
 
         {!isMobile && hoveredSkill && (
           <div

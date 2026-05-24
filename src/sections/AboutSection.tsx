@@ -9,9 +9,7 @@ import { useReducedMotion } from '../hooks/useReducedMotion'
 gsap.registerPlugin(ScrollTrigger)
 
 const PROFILE_IMAGES = [
-  '/images/personal-photos/yo-portafolio.avif',
-  '/images/personal-photos/yo-guitar.avif',
-  '/images/personal-photos/yo-snowboard.avif'
+  '/images/personal-photos/yo-portafolio.avif'
 ]
 
 const STATS = [
@@ -26,8 +24,8 @@ const STATS = [
   {
     label: 'Education',
     value: 'Software Engineering',
-    color: '#6366F1',
-    colorClass: 'text-primary',
+    color: '#6366f1',
+    colorClass: 'text-blue',
     sub: 'Universidad Peruana de Ciencias Aplicadas',
     icon: GraduationCap,
   },
@@ -43,7 +41,7 @@ const STATS = [
 
 const PROFILE_NOTES: Array<{ label: string; value: string; icon: LucideIcon }> = [
   { label: 'profile.image', value: 'rotating_gallery', icon: Sparkles },
-  { label: 'focus.stack', value: 'react_next_sanity', icon: Code2 },
+  { label: 'focus.stack', value: 'react_next_api', icon: Code2 },
   { label: 'security.mode', value: 'enabled', icon: ShieldCheck },
 ]
 
@@ -92,10 +90,7 @@ export default function AboutSection() {
   }, [reducedMotion])
 
   useEffect(() => {
-    if (reducedMotion) {
-      setTypedName('Victor Meneses')
-      return
-    }
+    if (reducedMotion) return
 
     const el = nameTriggerRef.current
     if (!el) return
@@ -131,6 +126,7 @@ export default function AboutSection() {
   }, [nameVisible, reducedMotion])
 
   const profileImage = PROFILE_IMAGES[profileImageIndex]
+  const visibleName = reducedMotion ? 'Victor Meneses' : typedName
 
   return (
     <section id="about" className="section-padding">
@@ -142,7 +138,7 @@ export default function AboutSection() {
 
               <div className="flex items-center justify-between gap-4 pb-4 mb-6 border-b border-[#232D3F]">
                 <div className="flex items-center gap-3">
-                  <User size={16} className="text-cyan" />
+                  <User size={16} className="text-cyan" aria-hidden="true" />
                   <span className="font-mono text-secondary">about.md</span>
                 </div>
                 <span className="font-mono-sm text-tertiary hidden sm:inline">status: compiling_profile</span>
@@ -155,7 +151,7 @@ export default function AboutSection() {
                 </div>
 
                 <div className="about-name-line mb-4">
-                  <span className="about-name-text">{typedName || (reducedMotion ? 'Victor Meneses' : '')}</span>
+                  <span className="about-name-text">{visibleName}</span>
                   <span className="about-name-cursor" aria-hidden="true">_</span>
                 </div>
 
@@ -192,6 +188,8 @@ export default function AboutSection() {
                   src={profileImage}
                   alt="Victor Meneses portrait"
                   className="profile-photo"
+                  width={390}
+                  height={535}
                   loading="lazy"
                 />
               </div>
@@ -201,7 +199,7 @@ export default function AboutSection() {
                   const Icon = note.icon
                   return (
                     <div key={note.label} className="profile-note" style={{ animationDelay: `${index * 0.18}s` }}>
-                      <Icon size={14} className="text-cyan" />
+                      <Icon size={14} className="text-cyan" aria-hidden="true" />
                       <div>
                         <div className="font-mono-sm text-tertiary">{note.label}</div>
                         <div className="font-mono-sm text-primary">{note.value}</div>
@@ -222,7 +220,7 @@ export default function AboutSection() {
                     <div className="about-stat-card p-6 h-full">
                       <div className="flex items-center justify-between gap-4 mb-4">
                         <div className="font-mono-sm text-tertiary">{stat.label}</div>
-                        <Icon size={17} className={stat.colorClass} />
+                        <Icon size={17} className={stat.colorClass} aria-hidden="true" />
                       </div>
                       <AnimatedCounter target={stat.value} color={stat.color} />
                       <div className="font-mono-sm text-secondary mt-2">{stat.sub}</div>

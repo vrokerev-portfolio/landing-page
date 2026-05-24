@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type SyntheticEvent } from 'react'
 import {
   ChevronDown,
   ChevronRight,
@@ -19,6 +19,7 @@ interface ProjectItem {
   stack: string[]
   color: string
   image: string | null
+  previewOrientation?: 'landscape' | 'portrait'
   status?: string
   gallery?: string
   terminal?: string[]
@@ -44,7 +45,7 @@ const PROJECTS: ProjectItem[] = [
     description: 'Sitio para un bazar en Pueblo Libre, pensado para mostrar su catalogo, redes sociales y ubicacion.',
     stack: ['Vite', 'React', 'Tailwind'],
     color: '#38BDF8',
-    image: '/images/projects/webpage-comercial-victor.png',
+    image: '/images/projects/webpage-comercial-victor.avif',
     status: 'active',
     gallery: 'cyan',
     terminal: [
@@ -59,13 +60,13 @@ const PROJECTS: ProjectItem[] = [
     description: 'Landing para servicios de bodas y catering con portafolio, redes y presentacion de servicios.',
     stack: ['Vite', 'React', 'Tailwind'],
     color: '#6366F1',
-    image: '/images/projects/webpage-karin.png',
+    image: '/images/projects/webpage-karin.avif',
     status: 'active',
     gallery: 'violet',
     terminal: [
       'preview: event_brand_site',
       'focus: premium presentation + trust',
-      'note: cms-friendly visual structure',
+      'note: component-friendly visual structure',
     ],
   },
   {
@@ -74,7 +75,8 @@ const PROJECTS: ProjectItem[] = [
     description: 'App que simula el ingreso a la universidad para evitar cierres de sesion del app oficial.',
     stack: ['React', 'TypeScript', 'PWA'],
     color: '#34D399',
-    image: '/images/projects/app-mi-upc.png',
+    image: '/images/projects/app-mi-upc.avif',
+    previewOrientation: 'portrait',
     status: 'active',
     gallery: 'green',
     terminal: [
@@ -89,7 +91,7 @@ const PROJECTS: ProjectItem[] = [
     description: 'Emprendimiento con Harold Mayta para consultoria y desarrollo de software.',
     stack: ['Branding', 'Web', 'Consultoria'],
     color: '#F59E0B',
-    image: null,
+    image: '/images/projects/erykan.avif',
     status: 'active',
     gallery: 'amber',
     terminal: [
@@ -104,7 +106,7 @@ const PROJECTS: ProjectItem[] = [
     description: 'Canal de entrevistas en la calle y contenido de humor con Alejandro Barturen.',
     stack: ['Contenido', 'Redes', 'Produccion'],
     color: '#EC4899',
-    image: null,
+    image: '/images/projects/causa-y-efecto.avif',
     status: 'active',
     gallery: 'pink',
     terminal: [
@@ -144,10 +146,57 @@ function FileIcon({ type, color, size = 14 }: { type: string; color: string; siz
   return <FileText size={size} style={{ color }} />
 }
 
+function ProjectPreview({ project }: { project: ProjectItem }) {
+  const [detectedOrientation, setDetectedOrientation] = useState(project.previewOrientation ?? 'landscape')
+  const isPortraitPreview = detectedOrientation === 'portrait'
+
+  const handleImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
+    if (project.previewOrientation) return
+    const image = event.currentTarget
+    setDetectedOrientation(image.naturalHeight > image.naturalWidth * 1.08 ? 'portrait' : 'landscape')
+  }
+
+  return (
+    <div className={`project-preview-frame ${isPortraitPreview ? 'project-preview-frame--portrait' : ''}`}>
+      {project.image ? (
+        <>
+          {isPortraitPreview && (
+            <img
+              src={project.image}
+              alt=""
+              aria-hidden="true"
+              className="project-preview-backdrop"
+              width={430}
+              height={860}
+              loading="lazy"
+              decoding="async"
+            />
+          )}
+          <img
+            src={project.image}
+            alt={`${project.title} preview`}
+            className="project-preview-image"
+            width={isPortraitPreview ? 430 : 1200}
+            height={isPortraitPreview ? 860 : 675}
+            loading="lazy"
+            decoding="async"
+            onLoad={handleImageLoad}
+          />
+        </>
+      ) : (
+        <div className="project-preview-empty">
+          Preview pending
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProjectsSection() {
   const rotationTimeoutRef = useRef<number | null>(null)
+  const scheduleRotationRef = useRef<(fromId: string) => void>(() => {})
   const [selectedFile, setSelectedFile] = useState(PROJECTS[0].id)
-  const [openTabs, setOpenTabs] = useState([PROJECTS[0].id])
+  const [openTabs, setOpenTabs] = useState(PROJECTS.map(project => project.id))
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['projects', ...PROJECTS.map(project => project.id)]))
 
   const currentProject = useMemo(
@@ -155,21 +204,24 @@ export default function ProjectsSection() {
     [selectedFile]
   )
 
-  const scheduleRotation = useCallback((fromId?: string) => {
+  const scheduleRotation = useCallback((fromId: string) => {
     if (rotationTimeoutRef.current) {
       window.clearTimeout(rotationTimeoutRef.current)
     }
 
     rotationTimeoutRef.current = window.setTimeout(() => {
-      const currentId = fromId ?? selectedFile
-      const currentIndex = PROJECTS.findIndex(project => project.id === currentId)
+      const currentIndex = PROJECTS.findIndex(project => project.id === fromId)
       const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % PROJECTS.length : 0
       const nextId = PROJECTS[nextIndex].id
       setSelectedFile(nextId)
       setOpenTabs(prev => (prev.includes(nextId) ? prev : [...prev, nextId]))
-      scheduleRotation(nextId)
+      scheduleRotationRef.current(nextId)
     }, 5200)
   }, [])
+
+  useEffect(() => {
+    scheduleRotationRef.current = scheduleRotation
+  }, [scheduleRotation])
 
   useEffect(() => {
     scheduleRotation(PROJECTS[0].id)
@@ -207,6 +259,11 @@ export default function ProjectsSection() {
     })
   }
 
+  const resetRotationOnShellClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest('button')) return
+    scheduleRotation(selectedFile)
+  }
+
   const renderContent = (project: ProjectItem) => (
     <div className="space-y-6">
       <div>
@@ -216,21 +273,7 @@ export default function ProjectsSection() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.35fr_0.95fr]">
-        <div className="rounded-lg border border-[#232D3F] bg-page/40 p-4">
-          {project.image ? (
-            <img
-              src={project.image}
-              alt={`${project.title} preview`}
-              className="w-full h-[220px] object-cover rounded-md"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : (
-            <div className="h-[220px] rounded-md border border-dashed border-[#232D3F] bg-surface/60 flex items-center justify-center text-tertiary font-mono-sm">
-              Preview pending
-            </div>
-          )}
-        </div>
+        <ProjectPreview key={project.id} project={project} />
 
         <div className="rounded-lg border border-[#232D3F] bg-page/40 p-4 flex flex-col justify-between gap-6 project-meta-panel">
           <div>
@@ -295,7 +338,7 @@ export default function ProjectsSection() {
               '--project-color': currentProject.color,
               '--project-rgb': hexToRgb(currentProject.color),
             } as CSSProperties}
-            onClick={() => scheduleRotation(selectedFile)}
+            onClick={resetRotationOnShellClick}
           >
             <div className="flex flex-col lg:flex-row min-h-[620px]">
               <div className="editor-sidebar w-full lg:w-[280px] border-b lg:border-b-0 lg:border-r border-[#232D3F] flex-shrink-0">
@@ -305,7 +348,9 @@ export default function ProjectsSection() {
                 <div className="p-3">
                   <div className="mb-1">
                     <button
+                      type="button"
                       onClick={() => toggleFolder('projects')}
+                      aria-expanded={expandedFolders.has('projects')}
                       className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded text-primary hover:bg-white/[0.03] transition-colors"
                     >
                       <FolderOpen size={14} className="text-cyan" />
@@ -315,7 +360,9 @@ export default function ProjectsSection() {
                     {expandedFolders.has('projects') && DIRECTORY.map(folder => (
                       <div key={folder.id} className="ml-4">
                         <button
+                          type="button"
                           onClick={() => toggleFolder(folder.id)}
+                          aria-expanded={expandedFolders.has(folder.id)}
                           className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded text-secondary hover:bg-white/[0.03] transition-colors"
                         >
                           {expandedFolders.has(folder.id) ? (
@@ -335,8 +382,10 @@ export default function ProjectsSection() {
                           <div className="ml-8 pl-3 border-l border-[#232D3F]/70">
                             {folder.files.map(file => (
                               <button
+                                type="button"
                                 key={file.id}
                                 onClick={() => selectFile(file.id)}
+                                aria-current={selectedFile === file.id ? 'true' : undefined}
                                 className={`project-file-row grid grid-cols-[14px_minmax(0,1fr)] items-start gap-2 w-full px-2 py-1.5 rounded font-mono-sm transition-colors ${
                                   selectedFile === file.id
                                     ? 'text-primary border-l-2'
@@ -359,35 +408,52 @@ export default function ProjectsSection() {
               </div>
 
               <div className="flex-1 flex flex-col min-w-0">
-                <div className="editor-tabs-scroll flex border-b border-[#232D3F] overflow-x-auto">
+                <div className="editor-tabs-scroll flex border-b border-[#232D3F] overflow-x-auto" role="tablist" aria-label="Project files">
                   {openTabs.map(tab => {
                     const tabProject = PROJECTS.find(project => project.id === tab) ?? PROJECTS[0]
                     const isActive = selectedFile === tab
 
                     return (
-                      <button
+                      <div
                         key={tab}
-                        onClick={() => selectFile(tab)}
-                        className={`editor-tab-button flex items-center gap-2 px-4 py-2.5 font-mono-sm whitespace-nowrap border-r border-[#232D3F] transition-colors ${
+                        className={`editor-tab-button flex items-stretch font-mono-sm whitespace-nowrap border-r border-[#232D3F] transition-colors ${
                           isActive ? 'bg-surface-elevated text-primary border-b-2' : 'text-secondary hover:text-primary'
                         }`}
                         style={isActive ? { borderBottomColor: tabProject.color } : undefined}
                       >
-                        <span className="truncate">{tab}.md</span>
-                        <X
-                          size={12}
-                          className="text-tertiary hover:text-primary"
-                          onClick={(e: ReactMouseEvent<SVGSVGElement>) => {
+                        <button
+                          type="button"
+                          role="tab"
+                          id={`project-tab-${tab}`}
+                          aria-selected={isActive}
+                          aria-controls={`project-panel-${tab}`}
+                          onClick={() => selectFile(tab)}
+                          className="flex min-w-0 items-center px-4 py-2.5"
+                        >
+                          <span className="truncate">{tab}.md</span>
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Close ${tab}.md tab`}
+                          onClick={(e: ReactMouseEvent<HTMLButtonElement>) => {
                             e.stopPropagation()
                             closeTab(tab)
                           }}
-                        />
-                      </button>
+                          className="flex items-center px-2 py-2.5 text-tertiary hover:text-primary"
+                        >
+                          <X size={12} aria-hidden="true" />
+                        </button>
+                      </div>
                     )
                   })}
                 </div>
 
-                <div className="editor-scroll flex-1 p-6 lg:p-8 overflow-auto">
+                <div
+                  id={`project-panel-${currentProject.id}`}
+                  role="tabpanel"
+                  aria-labelledby={`project-tab-${currentProject.id}`}
+                  className="editor-scroll flex-1 p-6 lg:p-8 overflow-auto"
+                >
                   <div className="animate-in fade-in duration-150">
                     {renderContent(currentProject)}
                   </div>

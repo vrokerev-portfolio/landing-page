@@ -1,0 +1,5 @@
+# TODO before production: replace https://replace-with-your-domain.example with the final canonical domain.
+User-agent: *
+Allow: /
+
+Sitemap: https://replace-with-your-domain.example/sitemap.xml

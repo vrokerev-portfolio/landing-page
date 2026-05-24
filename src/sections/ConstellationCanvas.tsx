@@ -169,7 +169,7 @@ export default function ConstellationCanvas() {
   }, []);
 
   return (
-    <div ref={containerRef} className="absolute inset-0 overflow-hidden">
+    <div ref={containerRef} className="absolute inset-0 overflow-hidden" aria-hidden="true">
       <canvas ref={canvasRef} className="absolute inset-0" />
     </div>
   );

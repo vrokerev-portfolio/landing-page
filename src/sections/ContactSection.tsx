@@ -1,9 +1,10 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { ExternalLink, Mail, Download, Github, Linkedin, Instagram } from 'lucide-react'
 import ScrollReveal from '../components/ScrollReveal'
 import SectionHeader from '../components/SectionHeader'
 import StatusBadge from '../components/StatusBadge'
 import BorderGlowCard from '../components/BorderGlowCard'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 
 const SOCIAL_LINKS = [
   {
@@ -38,12 +39,143 @@ const SOCIAL_LINKS = [
     label: 'CV',
     value: 'download.pdf',
     icon: Download,
-    href: '#',
+    href: null,
     color: '#F59E0B',
   },
 ]
 
+const TERMINAL_LINES = [
+  '$ connect --channels',
+  '',
+  'Available channels:',
+  'github     Code, repos and dev activity',
+  'linkedin   Professional profile',
+  'instagram  Personal / social updates',
+  'email      Direct contact',
+  'cv         Resume file',
+  '',
+  '$ ready --status online',
+]
+
+const CHANNEL_NAMES = ['github', 'linkedin', 'instagram', 'email', 'cv']
+
+function TerminalTypedLine({
+  text,
+  active,
+}: {
+  text: string
+  active: boolean
+}) {
+  if (text === '') return <div className="h-4" />
+
+  const channel = CHANNEL_NAMES.find(name => text.startsWith(name))
+
+  if (text.startsWith('$ ')) {
+    return (
+      <div className="font-mono text-primary contact-terminal-line">
+        <span className="text-tertiary mr-2">$</span>
+        <span>{text.slice(2)}</span>
+        {active && <span className="contact-type-cursor" aria-hidden="true">_</span>}
+      </div>
+    )
+  }
+
+  if (channel) {
+    return (
+      <div className="font-mono text-secondary pl-4 contact-terminal-line">
+        <span className="text-cyan">{text.slice(0, channel.length)}</span>
+        <span>{text.slice(channel.length)}</span>
+        {active && <span className="contact-type-cursor" aria-hidden="true">_</span>}
+      </div>
+    )
+  }
+
+  return (
+    <div className="font-mono text-secondary contact-terminal-line">
+      <span>{text}</span>
+      {active && <span className="contact-type-cursor" aria-hidden="true">_</span>}
+    </div>
+  )
+}
+
 export default function ContactSection() {
+  const terminalRef = useRef<HTMLDivElement>(null)
+  const reducedMotion = useReducedMotion()
+  const [terminalStarted, setTerminalStarted] = useState(false)
+  const [typedLines, setTypedLines] = useState(() => TERMINAL_LINES.map(() => ''))
+  const [activeLine, setActiveLine] = useState(0)
+
+  useEffect(() => {
+    if (reducedMotion) return
+
+    const terminal = terminalRef.current
+    if (!terminal) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setTerminalStarted(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.38 }
+    )
+
+    observer.observe(terminal)
+    return () => observer.disconnect()
+  }, [reducedMotion])
+
+  useEffect(() => {
+    if (!terminalStarted || reducedMotion) return
+
+    let lineIndex = 0
+    let charIndex = 0
+    let timer: number | null = null
+
+    const typeNext = () => {
+      if (lineIndex >= TERMINAL_LINES.length) {
+        setActiveLine(TERMINAL_LINES.length - 1)
+        return
+      }
+
+      const fullLine = TERMINAL_LINES[lineIndex]
+      setActiveLine(lineIndex)
+
+      if (fullLine === '') {
+        lineIndex += 1
+        charIndex = 0
+        timer = window.setTimeout(typeNext, 120)
+        return
+      }
+
+      charIndex += 1
+      setTypedLines(previous => {
+        const next = [...previous]
+        next[lineIndex] = fullLine.slice(0, charIndex)
+        return next
+      })
+
+      if (charIndex >= fullLine.length) {
+        lineIndex += 1
+        charIndex = 0
+        timer = window.setTimeout(typeNext, fullLine.startsWith('$ ') ? 180 : 70)
+        return
+      }
+
+      timer = window.setTimeout(typeNext, fullLine.startsWith('$ ') ? 26 : 14)
+    }
+
+    timer = window.setTimeout(typeNext, 220)
+
+    return () => {
+      if (timer) window.clearTimeout(timer)
+    }
+  }, [terminalStarted, reducedMotion])
+
+  const visibleTypedLines = reducedMotion ? TERMINAL_LINES : typedLines
+  const visibleActiveLine = reducedMotion ? TERMINAL_LINES.length - 1 : activeLine
+  const terminalIsStarted = reducedMotion || terminalStarted
+
   return (
     <section id="contact" className="section-padding">
       <div className="max-w-[940px] mx-auto px-4">
@@ -64,25 +196,19 @@ export default function ContactSection() {
               </div>
             </div>
 
-            <div className="p-7">
-              <div className="font-mono text-primary mb-1">
-                <span className="text-tertiary mr-2">$</span>
-                connect --channels
-              </div>
-              <div className="h-4" />
-              <div className="font-mono text-secondary mb-1">Available channels:</div>
-              <div className="font-mono text-secondary pl-4 space-y-1">
-                <div><span className="text-cyan">github</span>&nbsp;&nbsp;&nbsp;&nbsp; Code, repos and dev activity</div>
-                <div><span className="text-cyan">linkedin</span>&nbsp;&nbsp; Professional profile</div>
-                <div><span className="text-cyan">instagram</span>&nbsp; Personal / social updates</div>
-                <div><span className="text-cyan">email</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Direct contact</div>
-                <div><span className="text-cyan">cv</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Resume file</div>
-              </div>
-              <div className="h-4" />
-              <div className="font-mono text-primary">
-                <span className="text-tertiary mr-2">$</span>
-                ready --status online
-              </div>
+            <div
+              ref={terminalRef}
+              className="p-7 contact-terminal-body"
+              aria-label="Contact channels terminal"
+              aria-live="polite"
+            >
+              {visibleTypedLines.map((line, index) => (
+                <TerminalTypedLine
+                  key={`${TERMINAL_LINES[index]}-${index}`}
+                  text={line}
+                  active={terminalIsStarted && visibleActiveLine === index}
+                />
+              ))}
             </div>
           </div>
         </ScrollReveal>
@@ -90,26 +216,47 @@ export default function ContactSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {SOCIAL_LINKS.map((link, i) => {
             const Icon = link.icon
+            const isExternal = link.href?.startsWith('http')
+            const cardContent = (
+              <>
+                <div className="contact-link-icon-wrap" style={{ '--contact-color': link.color } as CSSProperties}>
+                  <Icon size={20} className="contact-link-icon" aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-mono text-primary group-hover:opacity-100 transition-colors duration-200 contact-link-label">
+                    {link.label}
+                  </div>
+                  <div className="font-mono-sm text-secondary truncate">{link.value}</div>
+                </div>
+                {link.href ? (
+                  <ExternalLink size={14} className="text-tertiary group-hover:translate-x-1 transition-transform ml-auto" aria-hidden="true" />
+                ) : (
+                  <span className="font-mono-sm text-tertiary ml-auto">soon</span>
+                )}
+              </>
+            )
+
             return (
               <ScrollReveal key={link.label} delay={i * 0.08}>
                 <BorderGlowCard color={link.color} hoverOnly className="h-full">
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="contact-link-card flex items-center gap-4 px-5 py-4 h-full group"
-                  >
-                    <div className="contact-link-icon-wrap" style={{ '--contact-color': link.color } as CSSProperties}>
-                      <Icon size={20} className="contact-link-icon" />
+                  {link.href ? (
+                    <a
+                      href={link.href}
+                      target={isExternal ? '_blank' : undefined}
+                      rel={isExternal ? 'noopener noreferrer' : undefined}
+                      aria-label={`${link.label}: ${link.value}`}
+                      className="contact-link-card flex items-center gap-4 px-5 py-4 h-full group"
+                    >
+                      {cardContent}
+                    </a>
+                  ) : (
+                    <div
+                      className="contact-link-card flex items-center gap-4 px-5 py-4 h-full group"
+                      aria-disabled="true"
+                    >
+                      {cardContent}
                     </div>
-                    <div className="min-w-0">
-                      <div className="font-mono text-primary group-hover:opacity-100 transition-colors duration-200 contact-link-label">
-                        {link.label}
-                      </div>
-                      <div className="font-mono-sm text-secondary truncate">{link.value}</div>
-                    </div>
-                    <ExternalLink size={14} className="text-tertiary group-hover:translate-x-1 transition-transform ml-auto" />
-                  </a>
+                  )}
                 </BorderGlowCard>
               </ScrollReveal>
             )

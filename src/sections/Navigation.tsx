@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react'
 
 const NAV_ITEMS = [
   { label: 'Home', href: '#hero' },
@@ -11,21 +11,45 @@ const NAV_ITEMS = [
 ]
 
 const SECTION_THEMES = [
-  { id: 'hero', color: '#38BDF8', rgb: '56, 189, 248', secondaryRgb: '52, 211, 153', tertiaryRgb: '99, 102, 241', hue: '0deg', navBg: 'rgba(56, 189, 248, 0.1)' },
-  { id: 'about', color: '#38BDF8', rgb: '56, 189, 248', secondaryRgb: '52, 211, 153', tertiaryRgb: '99, 102, 241', hue: '0deg', navBg: 'rgba(56, 189, 248, 0.12)' },
-  { id: 'experience', color: '#34D399', rgb: '52, 211, 153', secondaryRgb: '34, 211, 238', tertiaryRgb: '99, 102, 241', hue: '82deg', navBg: 'rgba(52, 211, 153, 0.1)' },
-  { id: 'projects', color: '#6366F1', rgb: '99, 102, 241', secondaryRgb: '56, 189, 248', tertiaryRgb: '236, 72, 153', hue: '34deg', navBg: 'rgba(99, 102, 241, 0.12)' },
-  { id: 'skills', color: '#EC4899', rgb: '236, 72, 153', secondaryRgb: '56, 189, 248', tertiaryRgb: '245, 158, 11', hue: '222deg', navBg: 'rgba(236, 72, 153, 0.1)' },
-  { id: 'certificates', color: '#EF4444', rgb: '239, 68, 68', secondaryRgb: '236, 72, 153', tertiaryRgb: '245, 158, 11', hue: '190deg', navBg: 'rgba(239, 68, 68, 0.1)' },
-  { id: 'contact', color: '#F59E0B', rgb: '245, 158, 11', secondaryRgb: '236, 72, 153', tertiaryRgb: '56, 189, 248', hue: '148deg', navBg: 'rgba(245, 158, 11, 0.11)' },
+  { id: 'hero', color: '#38BDF8', rgb: '56, 189, 248', secondaryRgb: '52, 211, 153', tertiaryRgb: '129, 140, 248', hue: '0deg', navBg: 'rgba(56, 189, 248, 0.1)' },
+  { id: 'about', color: '#38BDF8', rgb: '56, 189, 248', secondaryRgb: '52, 211, 153', tertiaryRgb: '129, 140, 248', hue: '0deg', navBg: 'rgba(56, 189, 248, 0.12)' },
+  { id: 'experience', color: '#34D399', rgb: '52, 211, 153', secondaryRgb: '34, 211, 238', tertiaryRgb: '132, 204, 22', hue: '0deg', navBg: 'rgba(52, 211, 153, 0.1)' },
+  { id: 'projects', color: '#6366F1', rgb: '99, 102, 241', secondaryRgb: '129, 140, 248', tertiaryRgb: '56, 189, 248', hue: '0deg', navBg: 'rgba(99, 102, 241, 0.12)' },
+  { id: 'skills', color: '#EC4899', rgb: '236, 72, 153', secondaryRgb: '168, 85, 247', tertiaryRgb: '56, 189, 248', hue: '0deg', navBg: 'rgba(236, 72, 153, 0.1)' },
+  { id: 'certificates', color: '#F59E0B', rgb: '245, 158, 11', secondaryRgb: '251, 113, 133', tertiaryRgb: '56, 189, 248', hue: '0deg', navBg: 'rgba(245, 158, 11, 0.11)' },
+  { id: 'contact', color: '#EF4444', rgb: '239, 68, 68', secondaryRgb: '244, 63, 94', tertiaryRgb: '245, 158, 11', hue: '0deg', navBg: 'rgba(239, 68, 68, 0.1)' },
 ]
 
 const DEFAULT_THEME = SECTION_THEMES[0]
+
+function parseRgb(rgb: string) {
+  return rgb.split(',').map(value => Number(value.trim()))
+}
+
+function formatRgb(rgb: number[]) {
+  return rgb.map(value => Math.round(value)).join(', ')
+}
+
+function mixRgb(from: number[], to: number[], progress: number) {
+  return from.map((value, index) => value + ((to[index] ?? value) - value) * progress)
+}
+
+function easeInOutCubic(progress: number) {
+  return progress < 0.5
+    ? 4 * progress * progress * progress
+    : 1 - Math.pow(-2 * progress + 2, 3) / 2
+}
 
 export default function Navigation() {
   const navRef = useRef<HTMLElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
   const lastAuroraOpacityRef = useRef('')
+  const auroraFrameRef = useRef<number | null>(null)
+  const auroraColorRef = useRef({
+    rgb: parseRgb(DEFAULT_THEME.rgb),
+    secondaryRgb: parseRgb(DEFAULT_THEME.secondaryRgb),
+    tertiaryRgb: parseRgb(DEFAULT_THEME.tertiaryRgb),
+  })
   const [activeSection, setActiveSection] = useState('hero')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [time, setTime] = useState('')
@@ -33,10 +57,53 @@ export default function Navigation() {
 
   useEffect(() => {
     const root = document.documentElement
-    root.style.setProperty('--active-aurora-rgb', activeTheme.rgb)
-    root.style.setProperty('--active-aurora-secondary-rgb', activeTheme.secondaryRgb)
-    root.style.setProperty('--active-aurora-tertiary-rgb', activeTheme.tertiaryRgb)
+    const start = {
+      rgb: auroraColorRef.current.rgb,
+      secondaryRgb: auroraColorRef.current.secondaryRgb,
+      tertiaryRgb: auroraColorRef.current.tertiaryRgb,
+    }
+    const target = {
+      rgb: parseRgb(activeTheme.rgb),
+      secondaryRgb: parseRgb(activeTheme.secondaryRgb),
+      tertiaryRgb: parseRgb(activeTheme.tertiaryRgb),
+    }
+    const duration = 1800
+    const startedAt = performance.now()
+
+    if (auroraFrameRef.current) {
+      cancelAnimationFrame(auroraFrameRef.current)
+    }
+
+    const animateAuroraColor = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / duration)
+      const eased = easeInOutCubic(progress)
+      const next = {
+        rgb: mixRgb(start.rgb, target.rgb, eased),
+        secondaryRgb: mixRgb(start.secondaryRgb, target.secondaryRgb, eased),
+        tertiaryRgb: mixRgb(start.tertiaryRgb, target.tertiaryRgb, eased),
+      }
+
+      root.style.setProperty('--active-aurora-rgb', formatRgb(next.rgb))
+      root.style.setProperty('--active-aurora-secondary-rgb', formatRgb(next.secondaryRgb))
+      root.style.setProperty('--active-aurora-tertiary-rgb', formatRgb(next.tertiaryRgb))
+      auroraColorRef.current = next
+
+      if (progress < 1) {
+        auroraFrameRef.current = requestAnimationFrame(animateAuroraColor)
+      } else {
+        auroraFrameRef.current = null
+      }
+    }
+
+    auroraFrameRef.current = requestAnimationFrame(animateAuroraColor)
     root.style.setProperty('--active-aurora-hue', activeTheme.hue)
+
+    return () => {
+      if (auroraFrameRef.current) {
+        cancelAnimationFrame(auroraFrameRef.current)
+        auroraFrameRef.current = null
+      }
+    }
   }, [activeTheme])
 
   useEffect(() => {
@@ -44,7 +111,7 @@ export default function Navigation() {
       ...section,
       element: document.getElementById(section.id),
     }))
-    const experience = document.getElementById('experience')
+    const auroraStartSection = document.getElementById('about')
 
     const update = () => {
       const progress = progressRef.current
@@ -54,10 +121,10 @@ export default function Navigation() {
       const pct = scrollHeight > 0 ? (window.scrollY / scrollHeight) * 100 : 0
       if (progress) progress.style.width = `${pct}%`
 
-      if (experience) {
-        const rect = experience.getBoundingClientRect()
-        const fadeStart = window.innerHeight * 1.18
-        const fadeEnd = window.innerHeight * 0.58
+      if (auroraStartSection) {
+        const rect = auroraStartSection.getBoundingClientRect()
+        const fadeStart = window.innerHeight * 1.08
+        const fadeEnd = window.innerHeight * 0.34
         const rawOpacity = (fadeStart - rect.top) / (fadeStart - fadeEnd)
         const opacity = Math.max(0, Math.min(1, rawOpacity))
         const nextOpacity = opacity.toFixed(2)
@@ -106,16 +173,21 @@ export default function Navigation() {
     return () => clearInterval(interval)
   }, [])
 
-  const handleNav = (href: string) => {
+  const handleNav = (href: string, event?: ReactMouseEvent<HTMLAnchorElement>) => {
+    event?.preventDefault()
     setMobileOpen(false)
     const el = document.querySelector(href)
     if (el) el.scrollIntoView({ behavior: 'smooth' })
   }
+  const hamburgerLineStyle = {
+    backgroundColor: activeTheme.color,
+    boxShadow: `0 0 12px rgba(${activeTheme.rgb}, 0.62)`,
+  }
 
   return (
-    <>
+    <header>
       {/* Progress bar */}
-      <div className="fixed top-0 left-0 right-0 h-1 z-[60] bg-transparent">
+      <div className="fixed top-0 left-0 right-0 h-1 z-[60] bg-transparent" aria-hidden="true">
         <div
           ref={progressRef}
           className="site-progress-bar h-full"
@@ -131,6 +203,7 @@ export default function Navigation() {
       <nav
         ref={navRef}
         className="site-nav fixed top-1 left-0 right-0 z-50 h-12 backdrop-blur-xl border-b"
+        aria-label="Primary navigation"
         style={{
           backgroundColor: activeTheme.navBg,
           borderColor: `rgba(${activeTheme.rgb}, 0.32)`,
@@ -144,9 +217,11 @@ export default function Navigation() {
               const sectionId = item.href.slice(1)
               const isActive = activeSection === sectionId
               return (
-                <button
+                <a
                   key={item.label}
-                  onClick={() => handleNav(item.href)}
+                  href={item.href}
+                  onClick={(event) => handleNav(item.href, event)}
+                  aria-current={isActive ? 'location' : undefined}
                   className={`relative h-full px-3 lg:px-4 font-nav transition-colors duration-200 flex items-center gap-2
                     ${isActive ? 'text-primary bg-surface/80 border-b-2' : 'text-secondary hover:text-primary hover:bg-surface/70'}`}
                   style={isActive ? { borderBottomColor: activeTheme.color } : undefined}
@@ -161,7 +236,7 @@ export default function Navigation() {
                     />
                   )}
                   {item.label}
-                </button>
+                </a>
               )
             })}
           </div>
@@ -170,16 +245,28 @@ export default function Navigation() {
           <button
             className="md:hidden flex flex-col gap-1.5 p-2"
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-navigation-menu"
           >
-            <span className={`w-5 h-0.5 bg-primary transition-transform duration-200 ${mobileOpen ? 'rotate-45 translate-y-2' : ''}`} />
-            <span className={`w-5 h-0.5 bg-primary transition-opacity duration-200 ${mobileOpen ? 'opacity-0' : ''}`} />
-            <span className={`w-5 h-0.5 bg-primary transition-transform duration-200 ${mobileOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+            <span className={`w-5 h-0.5 transition-all duration-700 ${mobileOpen ? 'rotate-45 translate-y-2' : ''}`} style={hamburgerLineStyle} />
+            <span className={`w-5 h-0.5 transition-all duration-700 ${mobileOpen ? 'opacity-0' : ''}`} style={hamburgerLineStyle} />
+            <span className={`w-5 h-0.5 transition-all duration-700 ${mobileOpen ? '-rotate-45 -translate-y-2' : ''}`} style={hamburgerLineStyle} />
           </button>
 
           {/* Status bar */}
           <div className="flex items-center gap-4">
-            <span className="hidden sm:flex items-center gap-2 font-mono-sm text-green">
-              <span className="w-2 h-2 rounded-full bg-green animate-pulse-glow" />
+            <span
+              className="hidden sm:flex items-center gap-2 font-mono-sm transition-colors duration-700"
+              style={{ color: activeTheme.color }}
+            >
+              <span
+                className="site-status-dot w-2 h-2 rounded-full transition-colors duration-700"
+                style={{
+                  '--status-rgb': activeTheme.rgb,
+                  backgroundColor: activeTheme.color,
+                } as CSSProperties}
+              />
               Online
             </span>
             <span className="hidden sm:block w-px h-4 bg-[#232D3F]" />
@@ -190,21 +277,24 @@ export default function Navigation() {
         {/* Mobile menu */}
         {mobileOpen && (
           <div
+            id="mobile-navigation-menu"
             className="md:hidden bg-surface border-b px-4 py-4"
             style={{ borderColor: `rgba(${activeTheme.rgb}, 0.3)` }}
           >
             {NAV_ITEMS.map(item => (
-              <button
+              <a
                 key={item.label}
-                onClick={() => handleNav(item.href)}
+                href={item.href}
+                onClick={(event) => handleNav(item.href, event)}
+                aria-current={activeSection === item.href.slice(1) ? 'location' : undefined}
                 className="block w-full text-left py-3 font-nav text-secondary hover:text-primary transition-colors"
               >
                 {item.label}
-              </button>
+              </a>
             ))}
           </div>
         )}
       </nav>
-    </>
+    </header>
   )
 }

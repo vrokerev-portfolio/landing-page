@@ -14,7 +14,6 @@ const TERMINAL_LINES = [
   { text: 'Name:        Victor Meneses', type: 'output' as const, highlight: 'Victor Meneses' },
   { text: 'Role:        Software Engineer @ Cuevatech', type: 'output' as const, highlight: 'Software Engineer' },
   { text: 'Education:   Software Engineering — UPC', type: 'output' as const },
-  { text: 'Cert:        eJPT Certified', type: 'output' as const, highlight: 'eJPT' },
   { text: 'English:     B2 (Professional working proficiency)', type: 'output' as const },
   { text: 'Status:      Available for opportunities', type: 'output' as const, highlight: 'Available' },
   { text: '// Profile loaded successfully.', type: 'comment' as const },
@@ -32,17 +31,15 @@ export default function HeroSection() {
   const [currentLineIndex, setCurrentLineIndex] = useState(0)
   const [charIndex, setCharIndex] = useState(0)
   const [showCursor, setShowCursor] = useState(true)
-  const [typingDone, setTypingDone] = useState(false)
+  const terminalFinished = reducedMotion || currentLineIndex >= TERMINAL_LINES.length
+  const visibleDisplayedLines = reducedMotion ? TERMINAL_LINES.length : displayedLines
+  const visibleCurrentLineIndex = reducedMotion ? TERMINAL_LINES.length : currentLineIndex
 
   // Terminal entrance animation
   useEffect(() => {
     if (!terminalRef.current || !fontsLoaded) return
 
-    if (reducedMotion) {
-      setDisplayedLines(TERMINAL_LINES.length)
-      setTypingDone(true)
-      return
-    }
+    if (reducedMotion) return
 
     gsap.from(terminalRef.current, {
       opacity: 0,
@@ -56,10 +53,7 @@ export default function HeroSection() {
   useEffect(() => {
     if (!fontsLoaded || reducedMotion) return
 
-    if (currentLineIndex >= TERMINAL_LINES.length) {
-      setTypingDone(true)
-      return
-    }
+    if (currentLineIndex >= TERMINAL_LINES.length) return
 
     const line = TERMINAL_LINES[currentLineIndex]
     const fullText = line.text
@@ -83,7 +77,7 @@ export default function HeroSection() {
 
   // CTA fade in
   useEffect(() => {
-    if (!typingDone || !ctaRef.current || reducedMotion) return
+    if (!terminalFinished || !ctaRef.current || reducedMotion) return
 
     gsap.from(ctaRef.current, {
       opacity: 0,
@@ -91,7 +85,7 @@ export default function HeroSection() {
       duration: 0.25,
       ease: 'power2.out',
     })
-  }, [typingDone, reducedMotion])
+  }, [terminalFinished, reducedMotion])
 
   // Cursor blink
   useEffect(() => {
@@ -103,8 +97,8 @@ export default function HeroSection() {
   }, [reducedMotion])
 
   const renderLine = (line: typeof TERMINAL_LINES[0], index: number) => {
-    const isCurrentLine = index === currentLineIndex && !typingDone
-    const isDisplayed = index < displayedLines
+    const isCurrentLine = index === visibleCurrentLineIndex && !terminalFinished
+    const isDisplayed = index < visibleDisplayedLines
     const text = isCurrentLine ? currentLineText : line.text
 
     if (!isDisplayed && !isCurrentLine) return null
@@ -136,7 +130,7 @@ export default function HeroSection() {
       <div key={index} className="font-mono hero-terminal-line whitespace-pre-wrap">
         {lineType === 'command' && <span className="text-tertiary mr-2">$</span>}
         {parts.length > 0 ? parts : <span className={lineType === 'comment' ? 'text-tertiary' : 'text-primary'}>{text}</span>}
-        {isCurrentLine && <span className={`text-cyan ${showCursor ? 'opacity-100' : 'opacity-0'}`}>_</span>}
+        {isCurrentLine && <span className={`text-cyan ${showCursor ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true">_</span>}
       </div>
     )
   }
@@ -151,6 +145,10 @@ export default function HeroSection() {
       <ConstellationCanvas />
 
       <div className="relative z-10 w-full max-w-[800px] mx-auto px-4 py-20 flex flex-col items-center">
+        <h1 className="sr-only">
+          Victor Meneses, Software Engineer focused on modern web experiences and cybersecurity
+        </h1>
+
         {/* Status badge */}
         <StatusBadge text="SYSTEM INITIALIZED" className="mb-8" />
 
@@ -175,10 +173,10 @@ export default function HeroSection() {
           {/* Terminal body */}
           <div ref={linesRef} className="hero-terminal-body p-7 sm:p-8 space-y-1.5">
             {TERMINAL_LINES.map((line, i) => renderLine(line, i))}
-            {typingDone && (
+            {terminalFinished && (
               <div className="font-mono hero-terminal-line">
                 <span className="text-tertiary mr-2">$</span>
-                <span className={`text-cyan ${showCursor ? 'opacity-100' : 'opacity-0'}`}>_</span>
+                <span className={`text-cyan ${showCursor ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true">_</span>
               </div>
             )}
           </div>
@@ -188,7 +186,7 @@ export default function HeroSection() {
         <div
           ref={ctaRef}
           className="flex flex-wrap items-center justify-center gap-4 mt-10"
-          style={{ opacity: typingDone ? 1 : 0 }}
+          style={{ opacity: terminalFinished ? 1 : 0 }}
         >
           <button
             onClick={() => scrollTo('#projects')}

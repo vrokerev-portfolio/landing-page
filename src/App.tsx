@@ -51,9 +51,12 @@ export default function App() {
 
   return (
     <div className="app-shell min-h-screen bg-page text-primary">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <Navigation />
       <div className="global-aurora" aria-hidden="true" />
-      <main>
+      <main id="main-content">
         <HeroSection />
         <AboutSection />
         <ExperienceSection />
