@@ -107,42 +107,33 @@ export default function Navigation() {
   }, [activeTheme])
 
   useEffect(() => {
-    const themedSections = SECTION_THEMES.map(section => ({
-      ...section,
-      element: document.getElementById(section.id),
-    }))
     const auroraStartSection = document.getElementById('about')
+    let scrollHeight = document.documentElement.scrollHeight - window.innerHeight
+    let auroraStartTop = auroraStartSection?.offsetTop ?? 0
+
+    const updateMetrics = () => {
+      scrollHeight = document.documentElement.scrollHeight - window.innerHeight
+      auroraStartTop = auroraStartSection?.offsetTop ?? 0
+    }
 
     const update = () => {
       const progress = progressRef.current
       const root = document.documentElement
 
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight
       const pct = scrollHeight > 0 ? (window.scrollY / scrollHeight) * 100 : 0
       if (progress) progress.style.width = `${pct}%`
 
       if (auroraStartSection) {
-        const rect = auroraStartSection.getBoundingClientRect()
+        const rectTop = auroraStartTop - window.scrollY
         const fadeStart = window.innerHeight * 1.08
         const fadeEnd = window.innerHeight * 0.34
-        const rawOpacity = (fadeStart - rect.top) / (fadeStart - fadeEnd)
+        const rawOpacity = (fadeStart - rectTop) / (fadeStart - fadeEnd)
         const opacity = Math.max(0, Math.min(1, rawOpacity))
         const nextOpacity = opacity.toFixed(2)
         if (nextOpacity !== lastAuroraOpacityRef.current) {
           root.style.setProperty('--aurora-opacity', nextOpacity)
           lastAuroraOpacityRef.current = nextOpacity
         }
-      }
-
-      const probeY = window.innerHeight * 0.42
-      const nextSection = themedSections.find(section => {
-        if (!section.element) return false
-        const rect = section.element.getBoundingClientRect()
-        return rect.top <= probeY && rect.bottom >= probeY
-      })
-
-      if (nextSection) {
-        setActiveSection(current => current === nextSection.id ? current : nextSection.id)
       }
     }
 
@@ -154,13 +145,48 @@ export default function Navigation() {
       }
     }
 
+    const onResize = () => {
+      updateMetrics()
+      onScroll()
+    }
+
+    updateMetrics()
     update()
     window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll)
+    window.addEventListener('resize', onResize)
     return () => {
       window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
+      window.removeEventListener('resize', onResize)
     }
+  }, [])
+
+  useEffect(() => {
+    const themedSections = SECTION_THEMES.map(section => ({
+      ...section,
+      element: document.getElementById(section.id),
+    }))
+
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries.filter(entry => entry.isIntersecting)
+        if (visible.length === 0) return
+        const next = visible.sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+        const id = next.target.getAttribute('id')
+        if (id) {
+          setActiveSection(current => current === id ? current : id)
+        }
+      },
+      {
+        rootMargin: '-42% 0px -58% 0px',
+        threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
+      }
+    )
+
+    themedSections.forEach(section => {
+      if (section.element) observer.observe(section.element)
+    })
+
+    return () => observer.disconnect()
   }, [])
 
   useEffect(() => {
@@ -202,12 +228,12 @@ export default function Navigation() {
       {/* Navigation */}
       <nav
         ref={navRef}
-        className="site-nav fixed top-1 left-0 right-0 z-50 h-12 backdrop-blur-xl border-b"
+        className="site-nav fixed top-1 left-0 right-0 z-50 h-12 border-b"
         aria-label="Primary navigation"
         style={{
           backgroundColor: activeTheme.navBg,
           borderColor: `rgba(${activeTheme.rgb}, 0.32)`,
-          boxShadow: `0 14px 38px rgba(0, 0, 0, 0.28), 0 0 34px rgba(${activeTheme.rgb}, 0.08)`,
+          boxShadow: 'none',
         }}
       >
         <div className="max-w-[1200px] mx-auto px-4 h-full flex items-center justify-between">

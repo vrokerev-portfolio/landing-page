@@ -93,6 +93,26 @@
     outline: 2px solid rgb(var(--active-aurora-rgb));
     outline-offset: 3px;
   }
+
+  .skip-link {
+    position: fixed;
+    left: 16px;
+    top: 12px;
+    z-index: 999;
+    transform: translateY(-140%);
+    border: 1px solid rgba(var(--active-aurora-rgb), 0.48);
+    border-radius: 8px;
+    background: rgba(11, 15, 23, 0.94);
+    color: var(--text-primary);
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    transition: transform 180ms ease;
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+  }
 }
 
 @layer components {
@@ -512,7 +532,7 @@
     height: 118vh;
     z-index: 0;
     opacity: 0.72;
-    filter: blur(58px) saturate(132%);
+    filter: none;
     background:
       radial-gradient(circle at 22% 24%, rgba(var(--active-aurora-rgb), 0.66), transparent 25%),
       radial-gradient(circle at 72% 24%, rgba(var(--active-aurora-secondary-rgb), 0.46), transparent 29%),
@@ -520,7 +540,7 @@
       radial-gradient(circle at 66% 50%, rgba(var(--active-aurora-tertiary-rgb), 0.34), transparent 32%),
       radial-gradient(circle at 50% 34%, rgba(var(--active-aurora-secondary-rgb), 0.16), transparent 29%),
       radial-gradient(circle at 50% 26%, rgba(129, 140, 248, 0.12), transparent 36%);
-    animation: aurora-drift 18s ease-in-out infinite alternate;
+    animation: none;
     mask-image: linear-gradient(to bottom, black 0%, black 54%, rgba(0, 0, 0, 0.42) 72%, transparent 100%);
     transition: filter 1800ms ease, opacity 1200ms ease;
   }
@@ -558,9 +578,7 @@
   .about-bio-panel {
     position: relative;
     overflow: hidden;
-    box-shadow:
-      0 24px 70px rgba(0, 0, 0, 0.22),
-      0 0 44px rgba(56, 189, 248, 0.05);
+    box-shadow: none;
   }
 
   .about-bio-panel::before {
@@ -614,9 +632,7 @@
   .profile-visual-card {
     position: relative;
     min-height: 520px;
-    box-shadow:
-      0 24px 70px rgba(0, 0, 0, 0.24),
-      0 0 50px rgba(56, 189, 248, 0.05);
+    box-shadow: none;
   }
 
   .profile-grid-bg {
@@ -661,9 +677,7 @@
     max-height: 470px;
     object-fit: contain;
     object-position: bottom center;
-    filter:
-      drop-shadow(0 24px 32px rgba(0, 0, 0, 0.55))
-      drop-shadow(0 0 28px rgba(56, 189, 248, 0.08));
+    filter: none;
     transform: translateY(6px);
   }
 
@@ -686,8 +700,8 @@
     border: 1px solid rgba(35, 45, 63, 0.92);
     border-radius: 12px;
     background: rgba(11, 15, 23, 0.72);
-    backdrop-filter: blur(14px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+    backdrop-filter: none;
+    box-shadow: none;
     animation: profile-float 4.8s ease-in-out infinite;
   }
 
@@ -921,29 +935,33 @@
 
 
 @media (max-width: 768px) {
+  .global-aurora {
+    display: none;
+  }
+
+  .site-nav {
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  .profile-note {
+    backdrop-filter: none;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .profile-photo {
+    filter: none;
+  }
+
+  .profile-orbit,
+  .about-scanline {
+    animation: none;
+  }
+
   .global-aurora::before {
     animation: none;
     filter: blur(46px) saturate(126%);
-  }
-
-  .skip-link {
-    position: fixed;
-    left: 16px;
-    top: 12px;
-    z-index: 999;
-    transform: translateY(-140%);
-    border: 1px solid rgba(var(--active-aurora-rgb), 0.48);
-    border-radius: 8px;
-    background: rgba(11, 15, 23, 0.94);
-    color: var(--text-primary);
-    padding: 10px 12px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    transition: transform 180ms ease;
-  }
-
-  .skip-link:focus-visible {
-    transform: translateY(0);
   }
 
   .global-aurora::after {

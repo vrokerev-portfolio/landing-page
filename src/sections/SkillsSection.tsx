@@ -324,7 +324,8 @@ export default function SkillsSection() {
     let lastFrame = 0
     let frame = 0
     let isVisible = true
-    const targetFrameMs = reducedMotion ? 1000 / 4 : isMobile ? 1000 / 12 : 1000 / 22
+    const shouldAnimate = !reducedMotion && !isMobile
+    const targetFrameMs = shouldAnimate ? 1000 / 22 : 1000 / 4
     const mouseOffset = { x: 0, y: 0 }
     let draggingIndex: number | null = null
     const dragOffset = { x: 0, y: 0 }
@@ -361,6 +362,12 @@ export default function SkillsSection() {
       const layout = createSkillNodes(width, height, selectedCluster)
       nodes = layout.nodes
       edges = layout.edges
+      nodes.forEach(node => {
+        node.x = node.baseX
+        node.y = node.baseY
+        node.vx = 0
+        node.vy = 0
+      })
       staticStars = Array.from({ length: isMobile ? 22 : 56 }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
@@ -556,13 +563,19 @@ export default function SkillsSection() {
         animationFrameId = 0
         return
       }
-      if (now - lastFrame < targetFrameMs) {
-        animationFrameId = requestAnimationFrame(draw)
-        return
+
+      if (shouldAnimate) {
+        if (now - lastFrame < targetFrameMs) {
+          animationFrameId = requestAnimationFrame(draw)
+          return
+        }
+        lastFrame = now
+        frame += 1
+        time += 0.016
+      } else {
+        frame = 1
+        time = 0
       }
-      lastFrame = now
-      frame += 1
-      time += 0.016
       const enterProgress = easeOutCubic(Math.min(1, (now - transitionStartedAt) / 620))
       ctx.clearRect(0, 0, width, height)
 
@@ -571,29 +584,31 @@ export default function SkillsSection() {
         ctx.drawImage(starLayer, 0, 0, width, height)
       }
 
-      for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i]
-        if (draggingIndex === i) {
-          node.vx = 0
-          node.vy = 0
-          continue
+      if (shouldAnimate) {
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i]
+          if (draggingIndex === i) {
+            node.vx = 0
+            node.vy = 0
+            continue
+          }
+
+          const spring = node.type === 'core' ? 0.018 : node.type === 'cluster' ? 0.042 : 0.052
+          const drift = node.type === 'core' ? 1.6 : node.type === 'cluster' ? 3.4 : 4.6
+          const targetX = node.baseX + Math.sin(time * 0.26 + node.phase) * drift
+          const targetY = node.baseY + Math.cos(time * 0.22 + node.phase) * drift
+          node.vx += (targetX - node.x) * spring
+          node.vy += (targetY - node.y) * spring
+          node.vx *= 0.82
+          node.vy *= 0.82
+          node.x += node.vx
+          node.y += node.vy
+          clampNodeToCanvas(node)
         }
 
-        const spring = node.type === 'core' ? 0.018 : node.type === 'cluster' ? 0.042 : 0.052
-        const drift = reducedMotion ? 0 : node.type === 'core' ? 1.6 : node.type === 'cluster' ? 3.4 : 4.6
-        const targetX = node.baseX + Math.sin(time * 0.26 + node.phase) * drift
-        const targetY = node.baseY + Math.cos(time * 0.22 + node.phase) * drift
-        node.vx += (targetX - node.x) * spring
-        node.vy += (targetY - node.y) * spring
-        node.vx *= 0.82
-        node.vy *= 0.82
-        node.x += node.vx
-        node.y += node.vy
-        clampNodeToCanvas(node)
-      }
-
-      if (frame % (isMobile ? 6 : 4) === 0) {
-        applyRepulsion()
+        if (frame % 4 === 0) {
+          applyRepulsion()
+        }
       }
 
       const resolved = nodes.map(node => ({
@@ -623,7 +638,7 @@ export default function SkillsSection() {
         ctx.stroke()
         ctx.restore()
 
-        if (!isMobile && !reducedMotion && !isCoreEdge) {
+        if (shouldAnimate && !isCoreEdge) {
           const packetT = (time * edge.speed + edge.phase) % 1
           ctx.beginPath()
           ctx.arc(from.nx + (to.nx - from.nx) * packetT, from.ny + (to.ny - from.ny) * packetT, 1.35, 0, Math.PI * 2)
@@ -642,7 +657,11 @@ export default function SkillsSection() {
         }
       }
 
-      animationFrameId = requestAnimationFrame(draw)
+      if (shouldAnimate) {
+        animationFrameId = requestAnimationFrame(draw)
+      } else {
+        animationFrameId = 0
+      }
     }
 
     function handleMouseMove(e: MouseEvent) {
@@ -723,13 +742,21 @@ export default function SkillsSection() {
     }
 
     resize()
-    animationFrameId = requestAnimationFrame(draw)
+    if (shouldAnimate) {
+      animationFrameId = requestAnimationFrame(draw)
+    } else {
+      draw(performance.now())
+    }
 
     const ro = new ResizeObserver(() => resize())
     ro.observe(cnt)
 
     const io = new IntersectionObserver(([entry]) => {
       isVisible = entry?.isIntersecting ?? true
+      if (!shouldAnimate) {
+        if (isVisible) draw(performance.now())
+        return
+      }
       if (isVisible && !animationFrameId) {
         animationFrameId = requestAnimationFrame(draw)
       } else if (!isVisible && animationFrameId) {
@@ -739,11 +766,13 @@ export default function SkillsSection() {
     }, { threshold: 0.02 })
     io.observe(cnt)
 
-    cvs.addEventListener('mousemove', handleMouseMove, { passive: true })
-    cvs.addEventListener('mousedown', handleMouseDown)
-    cvs.addEventListener('mouseleave', handleMouseLeave)
+    if (shouldAnimate) {
+      cvs.addEventListener('mousemove', handleMouseMove, { passive: true })
+      cvs.addEventListener('mousedown', handleMouseDown)
+      cvs.addEventListener('mouseleave', handleMouseLeave)
+      window.addEventListener('mouseup', handleMouseUp)
+    }
     cvs.addEventListener('click', handleCanvasClick)
-    window.addEventListener('mouseup', handleMouseUp)
 
     return () => {
       cancelAnimationFrame(animationFrameId)
@@ -794,29 +823,53 @@ export default function SkillsSection() {
         </div>
       </div>
 
-      <div ref={containerRef} className="skills-canvas-field relative w-full h-[660px] md:h-[620px]">
-        <canvas ref={canvasRef} className="absolute inset-0 touch-manipulation" aria-hidden="true" />
-
-        {!isMobile && hoveredSkill && (
-          <div
-            className="absolute pointer-events-none bg-surface-elevated border border-[#232D3F] rounded-lg p-3 z-10"
-            style={{ left: mousePos.x + 15, top: mousePos.y - 60 }}
-          >
-            <div className="font-mono text-primary mb-1">{hoveredSkill.text}</div>
-            <div className="flex items-center gap-2">
-              <div className="w-[100px] h-1 bg-[#232D3F] rounded overflow-hidden">
-                <div
-                  className="h-full rounded"
-                  style={{ width: `${(hoveredSkill.proficiency / 3) * 100}%`, backgroundColor: hoveredSkill.color }}
-                />
+      {isMobile ? (
+        <div className="max-w-[1200px] mx-auto px-4 mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {SKILL_CLUSTERS.map(cluster => (
+            <div key={cluster.name} className="rounded-lg border border-[#232D3F] bg-surface/70 p-4">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cluster.color }} />
+                <span className="font-mono text-primary">{cluster.name}</span>
               </div>
-              <span className="font-mono-sm text-tertiary">
-                {proficiencyLabel(hoveredSkill.proficiency)}
-              </span>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {cluster.skills.map(skill => (
+                  <span
+                    key={skill.name}
+                    className="px-2.5 py-1 rounded-full border border-[#232D3F] font-mono-sm text-secondary"
+                    style={{ borderColor: `${cluster.color}55`, color: cluster.color }}
+                  >
+                    {skill.name}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div ref={containerRef} className="skills-canvas-field relative w-full h-[660px] md:h-[620px]">
+          <canvas ref={canvasRef} className="absolute inset-0 touch-manipulation" aria-hidden="true" />
+
+          {hoveredSkill && (
+            <div
+              className="absolute pointer-events-none bg-surface-elevated border border-[#232D3F] rounded-lg p-3 z-10"
+              style={{ left: mousePos.x + 15, top: mousePos.y - 60 }}
+            >
+              <div className="font-mono text-primary mb-1">{hoveredSkill.text}</div>
+              <div className="flex items-center gap-2">
+                <div className="w-[100px] h-1 bg-[#232D3F] rounded overflow-hidden">
+                  <div
+                    className="h-full rounded"
+                    style={{ width: `${(hoveredSkill.proficiency / 3) * 100}%`, backgroundColor: hoveredSkill.color }}
+                  />
+                </div>
+                <span className="font-mono-sm text-tertiary">
+                  {proficiencyLabel(hoveredSkill.proficiency)}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </section>
   )
 }

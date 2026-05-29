@@ -5,6 +5,7 @@ import { User, Code2, GraduationCap, ShieldCheck, Sparkles, type LucideIcon } fr
 import ScrollReveal from '../components/ScrollReveal'
 import BorderGlowCard from '../components/BorderGlowCard'
 import { useReducedMotion } from '../hooks/useReducedMotion'
+import { useIsMobile } from '../hooks/use-mobile'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -15,7 +16,7 @@ const PROFILE_IMAGES = [
 const STATS = [
   {
     label: 'Experience',
-    value: 'Software Engineer',
+    value: 'Backend Developer',
     color: '#38BDF8',
     colorClass: 'text-cyan',
     sub: '@ Cuevatech',
@@ -47,10 +48,14 @@ const PROFILE_NOTES: Array<{ label: string; value: string; icon: LucideIcon }> =
 
 function AnimatedCounter({ target, color }: { target: string; color: string }) {
   const ref = useRef<HTMLDivElement>(null)
+  const reducedMotion = useReducedMotion()
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
+
+    if (reducedMotion || isMobile) return
 
     gsap.from(el, {
       opacity: 0,
@@ -63,7 +68,7 @@ function AnimatedCounter({ target, color }: { target: string; color: string }) {
         once: true,
       },
     })
-  }, [])
+  }, [reducedMotion, isMobile])
 
   return (
     <div ref={ref} className="font-h3" style={{ color }}>
@@ -74,23 +79,24 @@ function AnimatedCounter({ target, color }: { target: string; color: string }) {
 
 export default function AboutSection() {
   const reducedMotion = useReducedMotion()
+  const isMobile = useIsMobile()
   const nameTriggerRef = useRef<HTMLDivElement>(null)
   const [profileImageIndex, setProfileImageIndex] = useState(0)
   const [nameVisible, setNameVisible] = useState(false)
   const [typedName, setTypedName] = useState('')
 
   useEffect(() => {
-    if (reducedMotion || PROFILE_IMAGES.length <= 1) return
+    if (reducedMotion || isMobile || PROFILE_IMAGES.length <= 1) return
 
     const interval = window.setInterval(() => {
       setProfileImageIndex(index => (index + 1) % PROFILE_IMAGES.length)
     }, 4200)
 
     return () => window.clearInterval(interval)
-  }, [reducedMotion])
+  }, [reducedMotion, isMobile])
 
   useEffect(() => {
-    if (reducedMotion) return
+    if (reducedMotion || isMobile) return
 
     const el = nameTriggerRef.current
     if (!el) return
@@ -109,10 +115,10 @@ export default function AboutSection() {
 
     observer.observe(el)
     return () => observer.disconnect()
-  }, [reducedMotion])
+  }, [reducedMotion, isMobile])
 
   useEffect(() => {
-    if (!nameVisible || reducedMotion) return
+    if (!nameVisible || reducedMotion || isMobile) return
     const fullName = 'Victor Meneses'
     let index = 0
     const interval = window.setInterval(() => {
@@ -123,10 +129,10 @@ export default function AboutSection() {
       }
     }, 48)
     return () => window.clearInterval(interval)
-  }, [nameVisible, reducedMotion])
+  }, [nameVisible, reducedMotion, isMobile])
 
   const profileImage = PROFILE_IMAGES[profileImageIndex]
-  const visibleName = reducedMotion ? 'Victor Meneses' : typedName
+  const visibleName = reducedMotion || isMobile ? 'Victor Meneses' : typedName
 
   return (
     <section id="about" className="section-padding">

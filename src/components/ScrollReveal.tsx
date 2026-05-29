@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useReducedMotion } from '../hooks/useReducedMotion'
+import { useIsMobile } from '../hooks/use-mobile'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -22,11 +23,12 @@ export default function ScrollReveal({
 }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null)
   const reducedMotion = useReducedMotion()
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    if (reducedMotion) {
+    if (reducedMotion || isMobile) {
       gsap.set(el, { clearProps: 'all' })
       return
     }
@@ -50,7 +52,7 @@ export default function ScrollReveal({
         once: true,
       },
     })
-  }, [delay, direction, duration, reducedMotion])
+  }, [delay, direction, duration, reducedMotion, isMobile])
 
   return (
     <div ref={ref} className={className}>

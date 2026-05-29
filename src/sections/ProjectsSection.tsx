@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import ScrollReveal from '../components/ScrollReveal'
 import SectionHeader from '../components/SectionHeader'
+import { useIsMobile } from '../hooks/use-mobile'
 
 interface ProjectItem {
   id: string
@@ -195,6 +196,7 @@ function ProjectPreview({ project }: { project: ProjectItem }) {
 export default function ProjectsSection() {
   const rotationTimeoutRef = useRef<number | null>(null)
   const scheduleRotationRef = useRef<(fromId: string) => void>(() => {})
+  const isMobile = useIsMobile()
   const [selectedFile, setSelectedFile] = useState(PROJECTS[0].id)
   const [openTabs, setOpenTabs] = useState(PROJECTS.map(project => project.id))
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['projects', ...PROJECTS.map(project => project.id)]))
@@ -205,6 +207,7 @@ export default function ProjectsSection() {
   )
 
   const scheduleRotation = useCallback((fromId: string) => {
+    if (isMobile) return
     if (rotationTimeoutRef.current) {
       window.clearTimeout(rotationTimeoutRef.current)
     }
@@ -217,20 +220,21 @@ export default function ProjectsSection() {
       setOpenTabs(prev => (prev.includes(nextId) ? prev : [...prev, nextId]))
       scheduleRotationRef.current(nextId)
     }, 5200)
-  }, [])
+  }, [isMobile])
 
   useEffect(() => {
     scheduleRotationRef.current = scheduleRotation
   }, [scheduleRotation])
 
   useEffect(() => {
+    if (isMobile) return
     scheduleRotation(PROJECTS[0].id)
     return () => {
       if (rotationTimeoutRef.current) {
         window.clearTimeout(rotationTimeoutRef.current)
       }
     }
-  }, [scheduleRotation])
+  }, [scheduleRotation, isMobile])
 
   const toggleFolder = (id: string) => {
     setExpandedFolders(prev => {

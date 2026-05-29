@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import { gsap } from 'gsap'
 import { useFontsLoaded } from '../hooks/useFontsLoaded'
 import { useReducedMotion } from '../hooks/useReducedMotion'
+import { useIsMobile } from '../hooks/use-mobile'
 import ConstellationCanvas from './ConstellationCanvas'
 import StatusBadge from '../components/StatusBadge'
 
@@ -26,20 +27,22 @@ export default function HeroSection() {
   const ctaRef = useRef<HTMLDivElement>(null)
   const fontsLoaded = useFontsLoaded()
   const reducedMotion = useReducedMotion()
+  const isMobile = useIsMobile()
   const [displayedLines, setDisplayedLines] = useState<number>(0)
   const [currentLineText, setCurrentLineText] = useState('')
   const [currentLineIndex, setCurrentLineIndex] = useState(0)
   const [charIndex, setCharIndex] = useState(0)
   const [showCursor, setShowCursor] = useState(true)
-  const terminalFinished = reducedMotion || currentLineIndex >= TERMINAL_LINES.length
-  const visibleDisplayedLines = reducedMotion ? TERMINAL_LINES.length : displayedLines
-  const visibleCurrentLineIndex = reducedMotion ? TERMINAL_LINES.length : currentLineIndex
+  const shouldAnimate = !reducedMotion && !isMobile
+  const terminalFinished = !shouldAnimate || currentLineIndex >= TERMINAL_LINES.length
+  const visibleDisplayedLines = shouldAnimate ? displayedLines : TERMINAL_LINES.length
+  const visibleCurrentLineIndex = shouldAnimate ? currentLineIndex : TERMINAL_LINES.length
 
   // Terminal entrance animation
   useEffect(() => {
     if (!terminalRef.current || !fontsLoaded) return
 
-    if (reducedMotion) return
+    if (!shouldAnimate) return
 
     gsap.from(terminalRef.current, {
       opacity: 0,
@@ -47,11 +50,11 @@ export default function HeroSection() {
       duration: 0.5,
       ease: 'power2.out',
     })
-  }, [fontsLoaded, reducedMotion])
+  }, [fontsLoaded, shouldAnimate])
 
   // Typing animation
   useEffect(() => {
-    if (!fontsLoaded || reducedMotion) return
+    if (!fontsLoaded || !shouldAnimate) return
 
     if (currentLineIndex >= TERMINAL_LINES.length) return
 
@@ -73,11 +76,11 @@ export default function HeroSection() {
       }, HERO_LINE_PAUSE_MS)
       return () => clearTimeout(timer)
     }
-  }, [fontsLoaded, reducedMotion, currentLineIndex, charIndex])
+  }, [fontsLoaded, shouldAnimate, currentLineIndex, charIndex])
 
   // CTA fade in
   useEffect(() => {
-    if (!terminalFinished || !ctaRef.current || reducedMotion) return
+    if (!terminalFinished || !ctaRef.current || !shouldAnimate) return
 
     gsap.from(ctaRef.current, {
       opacity: 0,
@@ -85,16 +88,16 @@ export default function HeroSection() {
       duration: 0.25,
       ease: 'power2.out',
     })
-  }, [terminalFinished, reducedMotion])
+  }, [terminalFinished, shouldAnimate])
 
   // Cursor blink
   useEffect(() => {
-    if (reducedMotion) return
+    if (!shouldAnimate) return
     const interval = setInterval(() => {
       setShowCursor(prev => !prev)
     }, 500)
     return () => clearInterval(interval)
-  }, [reducedMotion])
+  }, [shouldAnimate])
 
   const renderLine = (line: typeof TERMINAL_LINES[0], index: number) => {
     const isCurrentLine = index === visibleCurrentLineIndex && !terminalFinished
@@ -142,7 +145,7 @@ export default function HeroSection() {
 
   return (
     <section id="hero" ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <ConstellationCanvas />
+      {!isMobile && <ConstellationCanvas />}
 
       <div className="relative z-10 w-full max-w-[800px] mx-auto px-4 py-20 flex flex-col items-center">
         <h1 className="sr-only">

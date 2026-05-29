@@ -23,10 +23,11 @@ export default function ConstellationCanvas() {
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const isMobile = window.matchMedia('(max-width: 767px)').matches;
-    const NODE_COUNT = prefersReducedMotion ? 0 : isMobile ? 34 : 68;
+    const NODE_COUNT = prefersReducedMotion ? 0 : isMobile ? 20 : 58;
     const CONNECTION_DISTANCE = isMobile ? 105 : 135;
     const MOUSE_DISTANCE = isMobile ? 0 : 140;
     const TARGET_FRAME_MS = isMobile ? 1000 / 24 : 1000 / 42;
+    const CONNECTION_FRAME_INTERVAL = isMobile ? 4 : 2;
 
     let width = 0;
     let height = 0;
@@ -34,6 +35,9 @@ export default function ConstellationCanvas() {
     let animationFrameId = 0;
     let lastFrame = 0;
     let isVisible = true;
+    let isTabVisible = true;
+    let frameCount = 0;
+    let cachedConnections: Array<{ x1: number; y1: number; x2: number; y2: number; opacity: number }> = [];
     const mousePos = { x: -1000, y: -1000 };
 
     const cvs = canvas;
@@ -64,10 +68,32 @@ export default function ConstellationCanvas() {
           opacity: Math.random() * 0.26 + 0.18,
         });
       }
+      cachedConnections = [];
+    }
+
+    function rebuildConnections() {
+      cachedConnections = [];
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < CONNECTION_DISTANCE) {
+            const opacity = (1 - dist / CONNECTION_DISTANCE) * (isMobile ? 0.32 : 0.48);
+            cachedConnections.push({
+              x1: nodes[i].x,
+              y1: nodes[i].y,
+              x2: nodes[j].x,
+              y2: nodes[j].y,
+              opacity,
+            });
+          }
+        }
+      }
     }
 
     function draw(now = 0) {
-      if (!isVisible) {
+      if (!isVisible || !isTabVisible) {
         animationFrameId = 0;
         return;
       }
@@ -78,6 +104,7 @@ export default function ConstellationCanvas() {
       }
       lastFrame = now;
 
+      frameCount += 1;
       c.clearRect(0, 0, width, height);
 
       for (const node of nodes) {
@@ -104,28 +131,24 @@ export default function ConstellationCanvas() {
         c.fill();
       }
 
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < CONNECTION_DISTANCE) {
-            const opacity = (1 - dist / CONNECTION_DISTANCE) * (isMobile ? 0.32 : 0.48);
-            c.strokeStyle = `rgba(56, 189, 248, ${opacity})`;
-            c.lineWidth = 0.5;
-            c.beginPath();
-            c.moveTo(nodes[i].x, nodes[i].y);
-            c.lineTo(nodes[j].x, nodes[j].y);
-            c.stroke();
-          }
-        }
+      if (frameCount % CONNECTION_FRAME_INTERVAL === 0 || cachedConnections.length === 0) {
+        rebuildConnections();
+      }
+
+      for (const link of cachedConnections) {
+        c.strokeStyle = `rgba(56, 189, 248, ${link.opacity})`;
+        c.lineWidth = 0.5;
+        c.beginPath();
+        c.moveTo(link.x1, link.y1);
+        c.lineTo(link.x2, link.y2);
+        c.stroke();
       }
 
       animationFrameId = requestAnimationFrame(draw);
     }
 
     function start() {
-      if (!animationFrameId && !prefersReducedMotion) {
+      if (!animationFrameId && !prefersReducedMotion && isTabVisible) {
         animationFrameId = requestAnimationFrame(draw);
       }
     }
@@ -139,6 +162,12 @@ export default function ConstellationCanvas() {
       const rect = cvs.getBoundingClientRect();
       mousePos.x = e.clientX - rect.left;
       mousePos.y = e.clientY - rect.top;
+    }
+
+    function handleVisibilityChange() {
+      isTabVisible = document.visibilityState === 'visible';
+      if (isTabVisible && isVisible) start();
+      if (!isTabVisible) stop();
     }
 
     resize();
@@ -159,10 +188,12 @@ export default function ConstellationCanvas() {
     io.observe(cnt);
 
     if (!isMobile) cvs.addEventListener("mousemove", handleMouseMove, { passive: true });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       stop();
       cvs.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       ro.disconnect();
       io.disconnect();
     };
