@@ -1,50 +1,15 @@
 import { useRef, useEffect, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { User, Code2, GraduationCap, ShieldCheck, Sparkles, type LucideIcon } from 'lucide-react'
+import { User } from 'lucide-react'
 import ScrollReveal from '../components/ScrollReveal'
 import BorderGlowCard from '../components/BorderGlowCard'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useIsMobile } from '../hooks/use-mobile'
+import { usePortfolioContent } from '../data/portfolioContent'
+import { getIcon } from '../lib/iconMap'
 
 gsap.registerPlugin(ScrollTrigger)
-
-const PROFILE_IMAGES = [
-  '/images/personal-photos/yo-portafolio.avif'
-]
-
-const STATS = [
-  {
-    label: 'Experience',
-    value: 'Backend Developer',
-    color: '#38BDF8',
-    colorClass: 'text-cyan',
-    sub: '@ Cuevatech',
-    icon: Code2,
-  },
-  {
-    label: 'Education',
-    value: 'Software Engineering',
-    color: '#6366f1',
-    colorClass: 'text-blue',
-    sub: 'Universidad Peruana de Ciencias Aplicadas',
-    icon: GraduationCap,
-  },
-  {
-    label: 'Certifications',
-    value: 'Cybersecurity + Scrum',
-    color: '#34D399',
-    colorClass: 'text-green',
-    sub: 'eJPT, CCA, IBM, SCRUM',
-    icon: ShieldCheck,
-  },
-]
-
-const PROFILE_NOTES: Array<{ label: string; value: string; icon: LucideIcon }> = [
-  { label: 'profile.image', value: 'rotating_gallery', icon: Sparkles },
-  { label: 'focus.stack', value: 'react_next_api', icon: Code2 },
-  { label: 'security.mode', value: 'enabled', icon: ShieldCheck },
-]
 
 function AnimatedCounter({ target, color }: { target: string; color: string }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -78,22 +43,24 @@ function AnimatedCounter({ target, color }: { target: string; color: string }) {
 }
 
 export default function AboutSection() {
+  const { about } = usePortfolioContent()
   const reducedMotion = useReducedMotion()
   const isMobile = useIsMobile()
   const nameTriggerRef = useRef<HTMLDivElement>(null)
   const [profileImageIndex, setProfileImageIndex] = useState(0)
   const [nameVisible, setNameVisible] = useState(false)
   const [typedName, setTypedName] = useState('')
+  const profileImages = about.profileImages.length ? about.profileImages : ['/images/personal-photos/yo-portafolio.avif']
 
   useEffect(() => {
-    if (reducedMotion || isMobile || PROFILE_IMAGES.length <= 1) return
+    if (reducedMotion || isMobile || profileImages.length <= 1) return
 
     const interval = window.setInterval(() => {
-      setProfileImageIndex(index => (index + 1) % PROFILE_IMAGES.length)
+      setProfileImageIndex(index => (index + 1) % profileImages.length)
     }, 4200)
 
     return () => window.clearInterval(interval)
-  }, [reducedMotion, isMobile])
+  }, [reducedMotion, isMobile, profileImages.length])
 
   useEffect(() => {
     if (reducedMotion || isMobile) return
@@ -119,7 +86,7 @@ export default function AboutSection() {
 
   useEffect(() => {
     if (!nameVisible || reducedMotion || isMobile) return
-    const fullName = 'Victor Meneses'
+    const fullName = about.name
     let index = 0
     const interval = window.setInterval(() => {
       index += 1
@@ -129,10 +96,10 @@ export default function AboutSection() {
       }
     }, 48)
     return () => window.clearInterval(interval)
-  }, [nameVisible, reducedMotion, isMobile])
+  }, [nameVisible, reducedMotion, isMobile, about.name])
 
-  const profileImage = PROFILE_IMAGES[profileImageIndex]
-  const visibleName = reducedMotion || isMobile ? 'Victor Meneses' : typedName
+  const profileImage = profileImages[profileImageIndex] ?? profileImages[0]
+  const visibleName = reducedMotion || isMobile ? about.name : typedName
 
   return (
     <section id="about" className="section-padding">
@@ -145,15 +112,15 @@ export default function AboutSection() {
               <div className="flex items-center justify-between gap-4 pb-4 mb-6 border-b border-[#232D3F]">
                 <div className="flex items-center gap-3">
                   <User size={16} className="text-cyan" aria-hidden="true" />
-                  <span className="font-mono text-secondary">about.md</span>
+                  <span className="font-mono text-secondary">{about.fileLabel}</span>
                 </div>
-                <span className="font-mono-sm text-tertiary hidden sm:inline">status: compiling_profile</span>
+                <span className="font-mono-sm text-tertiary hidden sm:inline">{about.status}</span>
               </div>
 
               <div className="relative z-10">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan/20 bg-cyan/5 font-mono-sm text-cyan mb-5">
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan animate-pulse" />
-                  personal_overview
+                  {about.pill}
                 </div>
 
                 <div className="about-name-line mb-4">
@@ -162,21 +129,26 @@ export default function AboutSection() {
                 </div>
 
                 <h2 className="font-h2 text-primary mb-5 about-title">
-                  Software Engineer focused on modern web experiences and cybersecurity
+                  {about.title}
                 </h2>
 
-                <p className="font-body text-secondary mb-5">
-                  I am a Software Engineering student at UPC, building real projects while improving my technical profile through professional work, certifications, and continuous learning.
-                </p>
+                {about.paragraphs.map(paragraph => (
+                  <p key={paragraph} className="font-body text-secondary mb-5">
+                    {paragraph}
+                  </p>
+                ))}
 
                 <div className="border-t border-[#232D3F] my-5" />
 
-                <p className="font-body text-secondary mb-6">
-                  My current focus is creating fast, polished, and maintainable interfaces with React/Next.js, while keeping a security mindset from my cybersecurity background.
-                </p>
-
                 <div className="about-command-line font-mono-sm text-tertiary pt-4 border-t border-[#232D3F]">
-                  <span className="text-cyan">$</span> whoami --location Lima, Peru --english B2
+                  {about.command.startsWith('$') ? (
+                    <>
+                      <span className="text-cyan">$</span>
+                      {about.command.slice(1)}
+                    </>
+                  ) : (
+                    about.command
+                  )}
                 </div>
               </div>
             </div>
@@ -192,7 +164,7 @@ export default function AboutSection() {
                 <img
                   key={profileImage}
                   src={profileImage}
-                  alt="Victor Meneses portrait"
+                  alt={about.imageAlt}
                   className="profile-photo"
                   width={390}
                   height={535}
@@ -201,8 +173,8 @@ export default function AboutSection() {
               </div>
 
               <div className="profile-note-stack">
-                {PROFILE_NOTES.map((note, index) => {
-                  const Icon = note.icon
+                {about.notes.map((note, index) => {
+                  const Icon = getIcon(note.icon, 'sparkles')
                   return (
                     <div key={note.label} className="profile-note" style={{ animationDelay: `${index * 0.18}s` }}>
                       <Icon size={14} className="text-cyan" aria-hidden="true" />
@@ -218,15 +190,15 @@ export default function AboutSection() {
           </ScrollReveal>
 
           <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {STATS.map((stat, i) => {
-              const Icon = stat.icon
+            {about.stats.map((stat, i) => {
+              const Icon = getIcon(stat.icon, 'award')
               return (
                 <ScrollReveal key={stat.label} delay={i * 0.12} direction="up">
                   <BorderGlowCard color={stat.color} hoverOnly className="about-stat-glow-card h-full">
                     <div className="about-stat-card p-6 h-full">
                       <div className="flex items-center justify-between gap-4 mb-4">
                         <div className="font-mono-sm text-tertiary">{stat.label}</div>
-                        <Icon size={17} className={stat.colorClass} aria-hidden="true" />
+                        <Icon size={17} style={{ color: stat.color }} aria-hidden="true" />
                       </div>
                       <AnimatedCounter target={stat.value} color={stat.color} />
                       <div className="font-mono-sm text-secondary mt-2">{stat.sub}</div>

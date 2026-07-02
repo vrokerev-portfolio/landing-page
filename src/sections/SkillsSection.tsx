@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, type CSSProperties } from 'react'
 import SectionHeader from '../components/SectionHeader'
 import { useReducedMotion } from '../hooks/useReducedMotion'
+import { usePortfolioContent, type SkillCluster } from '../data/portfolioContent'
 
 interface SkillNode {
   id: string
@@ -31,106 +32,12 @@ interface SkillEdge {
   speed: number
 }
 
-interface SkillCluster {
-  name: string
-  color: string
-  center: [number, number]
-  skills: Array<{ name: string; proficiency: number }>
-}
-
 interface StaticStar {
   x: number
   y: number
   radius: number
   alpha: number
 }
-
-const SKILL_CLUSTERS: SkillCluster[] = [
-  {
-    name: 'Programming',
-    color: '#38BDF8',
-    center: [0.18, 0.31],
-    skills: [
-      { name: 'TypeScript', proficiency: 3 },
-      { name: 'JavaScript', proficiency: 3 },
-      { name: 'Python', proficiency: 3 },
-      { name: 'SQL', proficiency: 2 },
-      { name: 'Java', proficiency: 2 },
-      { name: 'C', proficiency: 2 },
-    ],
-  },
-  {
-    name: 'Frontend',
-    color: '#6366F1',
-    center: [0.5, 0.17],
-    skills: [
-      { name: 'React', proficiency: 3 },
-      { name: 'Next.js', proficiency: 3 },
-      { name: 'Tailwind', proficiency: 3 },
-      { name: 'Content UI', proficiency: 2 },
-      { name: 'Vite', proficiency: 2 },
-      { name: 'PWA', proficiency: 2 },
-    ],
-  },
-  {
-    name: 'Backend APIs',
-    color: '#22D3EE',
-    center: [0.8, 0.62],
-    skills: [
-      { name: 'Node.js', proficiency: 3 },
-      { name: 'Express', proficiency: 3 },
-      { name: 'REST APIs', proficiency: 3 },
-      { name: 'Postman', proficiency: 3 },
-      { name: 'JWT', proficiency: 2 },
-      { name: 'MongoDB', proficiency: 2 },
-      { name: 'PostgreSQL', proficiency: 2 },
-      { name: 'API Testing', proficiency: 2 },
-    ],
-  },
-  {
-    name: 'Cybersecurity',
-    color: '#34D399',
-    center: [0.82, 0.29],
-    skills: [
-      { name: 'eJPT', proficiency: 2 },
-      { name: 'OWASP', proficiency: 3 },
-      { name: 'Linux', proficiency: 3 },
-      { name: 'Kali', proficiency: 2 },
-      { name: 'Pentesting', proficiency: 2 },
-      { name: 'Burp Suite', proficiency: 2 },
-      { name: 'Nmap', proficiency: 2 },
-    ],
-  },
-  {
-    name: 'Automation & AI',
-    color: '#EC4899',
-    center: [0.22, 0.72],
-    skills: [
-      { name: 'n8n', proficiency: 2 },
-      { name: 'AI Agents', proficiency: 2 },
-      { name: 'Prompting', proficiency: 3 },
-      { name: 'LLM APIs', proficiency: 2 },
-      { name: 'Workflows', proficiency: 2 },
-      { name: 'OpenAI API', proficiency: 2 },
-    ],
-  },
-  {
-    name: 'Dev Workflow',
-    color: '#F59E0B',
-    center: [0.58, 0.82],
-    skills: [
-      { name: 'Git', proficiency: 3 },
-      { name: 'Vercel', proficiency: 3 },
-      { name: 'Docker', proficiency: 2 },
-      { name: 'Scrum', proficiency: 3 },
-      { name: 'Excel', proficiency: 3 },
-      { name: 'Domain Driven Design', proficiency: 2 },
-      { name: 'Lighthouse', proficiency: 2 },
-      { name: 'GitHub', proficiency: 3 },
-      { name: 'VS Code', proficiency: 3 },
-    ],
-  },
-]
 
 function clampNumber(value: number, min: number, max: number) {
   if (min > max) return (min + max) / 2
@@ -151,11 +58,11 @@ function getActiveClusterCenter(width: number, height: number, cluster: SkillClu
   }
 }
 
-function createSkillNodes(width: number, height: number, activeClusterName: string | null) {
+function createSkillNodes(width: number, height: number, activeClusterName: string | null, clusters: SkillCluster[]) {
   const nodes: SkillNode[] = []
   const edges: SkillEdge[] = []
   const minDimension = Math.min(width, height)
-  const activeCluster = SKILL_CLUSTERS.find(cluster => cluster.name === activeClusterName)
+  const activeCluster = clusters.find(cluster => cluster.name === activeClusterName)
   const activeRingRadius = Math.max(96, Math.min(136, minDimension * 0.18))
   const activeCenter = activeCluster ? getActiveClusterCenter(width, height, activeCluster, activeRingRadius) : null
   const baseCore = { x: width * 0.5, y: height * 0.5 }
@@ -192,7 +99,7 @@ function createSkillNodes(width: number, height: number, activeClusterName: stri
 
   nodes.push(coreNode)
 
-  SKILL_CLUSTERS.forEach((cluster, clusterOrder) => {
+  clusters.forEach((cluster, clusterOrder) => {
     const clusterX = cluster.center[0] * width
     const clusterY = cluster.center[1] * height
     const isActiveCluster = cluster.name === activeClusterName
@@ -288,6 +195,8 @@ function createSkillNodes(width: number, height: number, activeClusterName: stri
 }
 
 export default function SkillsSection() {
+  const { skills } = usePortfolioContent()
+  const skillClusters = skills.clusters
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [hoveredSkill, setHoveredSkill] = useState<SkillNode | null>(null)
@@ -359,7 +268,7 @@ export default function SkillsSection() {
       cvs.style.width = `${width}px`
       cvs.style.height = `${height}px`
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      const layout = createSkillNodes(width, height, selectedCluster)
+      const layout = createSkillNodes(width, height, selectedCluster, skillClusters)
       nodes = layout.nodes
       edges = layout.edges
       nodes.forEach(node => {
@@ -785,7 +694,7 @@ export default function SkillsSection() {
       ro.disconnect()
       io.disconnect()
     }
-  }, [isMobile, selectedCluster, reducedMotion])
+  }, [isMobile, selectedCluster, reducedMotion, skillClusters])
 
   const proficiencyLabel = (level: number) => {
     if (level >= 3) return 'Advanced'
@@ -797,14 +706,14 @@ export default function SkillsSection() {
     <section id="skills" className="section-padding">
       <div className="max-w-[1200px] mx-auto px-4">
         <SectionHeader
-          title="Technical Skills"
-          number="04"
+          title={skills.title}
+          number={skills.number}
           centered
-          subtitle="Frontend, cybersecurity, automation, and the tools I use to ship polished work."
+          subtitle={skills.subtitle}
         />
 
         <div className="skills-legend-grid mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {SKILL_CLUSTERS.map(cluster => (
+          {skillClusters.map(cluster => (
             <button
               key={cluster.name}
               type="button"
@@ -825,7 +734,7 @@ export default function SkillsSection() {
 
       {isMobile ? (
         <div className="max-w-[1200px] mx-auto px-4 mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {SKILL_CLUSTERS.map(cluster => (
+          {skillClusters.map(cluster => (
             <div key={cluster.name} className="rounded-lg border border-[#232D3F] bg-surface/70 p-4">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cluster.color }} />

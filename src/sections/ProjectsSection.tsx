@@ -12,19 +12,7 @@ import {
 import ScrollReveal from '../components/ScrollReveal'
 import SectionHeader from '../components/SectionHeader'
 import { useIsMobile } from '../hooks/use-mobile'
-
-interface ProjectItem {
-  id: string
-  title: string
-  description: string
-  stack: string[]
-  color: string
-  image: string | null
-  previewOrientation?: 'landscape' | 'portrait'
-  status?: string
-  gallery?: string
-  terminal?: string[]
-}
+import { usePortfolioContent, type ProjectItem } from '../data/portfolioContent'
 
 interface FileItem {
   id: string
@@ -38,98 +26,6 @@ interface FolderItem {
   name: string
   files: FileItem[]
 }
-
-const PROJECTS: ProjectItem[] = [
-  {
-    id: 'comercial-victor',
-    title: 'Comercial Victor',
-    description: 'Sitio para un bazar en Pueblo Libre, pensado para mostrar su catalogo, redes sociales y ubicacion.',
-    stack: ['Vite', 'React', 'Tailwind'],
-    color: '#38BDF8',
-    image: '/images/projects/webpage-comercial-victor.avif',
-    status: 'active',
-    gallery: 'cyan',
-    terminal: [
-      'preview: ecommerce_landing',
-      'focus: catalog + social proof + conversion',
-      'note: optimized for visual merchandising',
-    ],
-  },
-  {
-    id: 'karin-bodas-catering',
-    title: 'Karin Bodas & Catering',
-    description: 'Landing para servicios de bodas y catering con portafolio, redes y presentacion de servicios.',
-    stack: ['Vite', 'React', 'Tailwind'],
-    color: '#6366F1',
-    image: '/images/projects/webpage-karin.avif',
-    status: 'active',
-    gallery: 'violet',
-    terminal: [
-      'preview: event_brand_site',
-      'focus: premium presentation + trust',
-      'note: component-friendly visual structure',
-    ],
-  },
-  {
-    id: 'mi-upc-app',
-    title: 'Mi UPC (App)',
-    description: 'App que simula el ingreso a la universidad para evitar cierres de sesion del app oficial.',
-    stack: ['React', 'TypeScript', 'PWA'],
-    color: '#34D399',
-    image: '/images/projects/app-mi-upc.avif',
-    previewOrientation: 'portrait',
-    status: 'active',
-    gallery: 'green',
-    terminal: [
-      'preview: app_experience',
-      'focus: persistence + convenience',
-      'note: built around student workflow',
-    ],
-  },
-  {
-    id: 'erykan-solutions',
-    title: 'Erykan Solutions',
-    description: 'Emprendimiento con Harold Mayta para consultoria y desarrollo de software.',
-    stack: ['Branding', 'Web', 'Consultoria'],
-    color: '#F59E0B',
-    image: '/images/projects/erykan.avif',
-    status: 'active',
-    gallery: 'amber',
-    terminal: [
-      'preview: startup_concept',
-      'focus: consultancy + product delivery',
-      'note: identity and offer still evolving',
-    ],
-  },
-  {
-    id: 'causa-efecto',
-    title: 'Causa & Efecto',
-    description: 'Canal de entrevistas en la calle y contenido de humor con Alejandro Barturen.',
-    stack: ['Contenido', 'Redes', 'Produccion'],
-    color: '#EC4899',
-    image: '/images/projects/causa-y-efecto.avif',
-    status: 'active',
-    gallery: 'pink',
-    terminal: [
-      'preview: media_content_project',
-      'focus: interviews + short-form social content',
-      'note: personality-driven production',
-    ],
-  },
-]
-
-const DIRECTORY: FolderItem[] = PROJECTS.map(project => ({
-  id: project.id,
-  name: project.id,
-  files: [
-    {
-      id: project.id,
-      name: `${project.id}.md`,
-      icon: project.image ? 'image' : 'text',
-      color: project.color,
-    },
-  ],
-}))
 
 function hexToRgb(hex: string) {
   const cleaned = hex.replace('#', '')
@@ -150,6 +46,7 @@ function FileIcon({ type, color, size = 14 }: { type: string; color: string; siz
 function ProjectPreview({ project }: { project: ProjectItem }) {
   const [detectedOrientation, setDetectedOrientation] = useState(project.previewOrientation ?? 'landscape')
   const isPortraitPreview = detectedOrientation === 'portrait'
+  const previewImage = project.image ?? project.images?.[0] ?? null
 
   const handleImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
     if (project.previewOrientation) return
@@ -159,11 +56,11 @@ function ProjectPreview({ project }: { project: ProjectItem }) {
 
   return (
     <div className={`project-preview-frame ${isPortraitPreview ? 'project-preview-frame--portrait' : ''}`}>
-      {project.image ? (
+      {previewImage ? (
         <>
           {isPortraitPreview && (
             <img
-              src={project.image}
+              src={previewImage ?? ''}
               alt=""
               aria-hidden="true"
               className="project-preview-backdrop"
@@ -174,7 +71,7 @@ function ProjectPreview({ project }: { project: ProjectItem }) {
             />
           )}
           <img
-            src={project.image}
+            src={previewImage ?? ''}
             alt={`${project.title} preview`}
             className="project-preview-image"
             width={isPortraitPreview ? 430 : 1200}
@@ -194,17 +91,40 @@ function ProjectPreview({ project }: { project: ProjectItem }) {
 }
 
 export default function ProjectsSection() {
+  const { projects } = usePortfolioContent()
+  const projectItems = projects.items
   const rotationTimeoutRef = useRef<number | null>(null)
   const scheduleRotationRef = useRef<(fromId: string) => void>(() => {})
   const isMobile = useIsMobile()
-  const [selectedFile, setSelectedFile] = useState(PROJECTS[0].id)
-  const [openTabs, setOpenTabs] = useState(PROJECTS.map(project => project.id))
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['projects', ...PROJECTS.map(project => project.id)]))
+  const [selectedFile, setSelectedFile] = useState(projectItems[0].id)
+  const [openTabs, setOpenTabs] = useState(projectItems.map(project => project.id))
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['projects', ...projectItems.map(project => project.id)]))
+
+  const directory: FolderItem[] = useMemo(() => projectItems.map(project => ({
+    id: project.id,
+    name: project.id,
+    files: [
+      {
+        id: project.id,
+        name: `${project.id}.md`,
+        icon: project.image ? 'image' : 'text',
+        color: project.color,
+      },
+    ],
+  })), [projectItems])
 
   const currentProject = useMemo(
-    () => PROJECTS.find(project => project.id === selectedFile) ?? PROJECTS[0],
-    [selectedFile]
+    () => projectItems.find(project => project.id === selectedFile) ?? projectItems[0],
+    [projectItems, selectedFile]
   )
+
+  useEffect(() => {
+    if (projectItems.some(project => project.id === selectedFile)) return
+    const fallbackId = projectItems[0].id
+    setSelectedFile(fallbackId)
+    setOpenTabs(projectItems.map(project => project.id))
+    setExpandedFolders(new Set(['projects', ...projectItems.map(project => project.id)]))
+  }, [projectItems, selectedFile])
 
   const scheduleRotation = useCallback((fromId: string) => {
     if (isMobile) return
@@ -213,14 +133,14 @@ export default function ProjectsSection() {
     }
 
     rotationTimeoutRef.current = window.setTimeout(() => {
-      const currentIndex = PROJECTS.findIndex(project => project.id === fromId)
-      const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % PROJECTS.length : 0
-      const nextId = PROJECTS[nextIndex].id
+      const currentIndex = projectItems.findIndex(project => project.id === fromId)
+      const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % projectItems.length : 0
+      const nextId = projectItems[nextIndex].id
       setSelectedFile(nextId)
       setOpenTabs(prev => (prev.includes(nextId) ? prev : [...prev, nextId]))
       scheduleRotationRef.current(nextId)
     }, 5200)
-  }, [isMobile])
+  }, [isMobile, projectItems])
 
   useEffect(() => {
     scheduleRotationRef.current = scheduleRotation
@@ -228,13 +148,13 @@ export default function ProjectsSection() {
 
   useEffect(() => {
     if (isMobile) return
-    scheduleRotation(PROJECTS[0].id)
+    scheduleRotation(projectItems[0].id)
     return () => {
       if (rotationTimeoutRef.current) {
         window.clearTimeout(rotationTimeoutRef.current)
       }
     }
-  }, [scheduleRotation, isMobile])
+  }, [scheduleRotation, isMobile, projectItems])
 
   const toggleFolder = (id: string) => {
     setExpandedFolders(prev => {
@@ -255,11 +175,11 @@ export default function ProjectsSection() {
     setOpenTabs(prev => {
       const next = prev.filter(t => t !== id)
       if (selectedFile === id) {
-        const fallback = next[next.length - 1] ?? PROJECTS[0].id
+        const fallback = next[next.length - 1] ?? projectItems[0].id
         setSelectedFile(fallback)
         scheduleRotation(fallback)
       }
-      return next.length > 0 ? next : [PROJECTS[0].id]
+      return next.length > 0 ? next : [projectItems[0].id]
     })
   }
 
@@ -330,9 +250,9 @@ export default function ProjectsSection() {
     <section id="projects" className="section-padding">
       <div className="max-w-[1200px] mx-auto px-4">
         <SectionHeader
-          title="Projects"
-          number="03"
-          subtitle="University projects and professional work"
+          title={projects.title}
+          number={projects.number}
+          subtitle={projects.subtitle}
         />
 
         <ScrollReveal>
@@ -361,7 +281,7 @@ export default function ProjectsSection() {
                       <span className="font-mono-sm">projects/</span>
                     </button>
 
-                    {expandedFolders.has('projects') && DIRECTORY.map(folder => (
+                    {expandedFolders.has('projects') && directory.map(folder => (
                       <div key={folder.id} className="ml-4">
                         <button
                           type="button"
@@ -414,7 +334,7 @@ export default function ProjectsSection() {
               <div className="flex-1 flex flex-col min-w-0">
                 <div className="editor-tabs-scroll flex border-b border-[#232D3F] overflow-x-auto" role="tablist" aria-label="Project files">
                   {openTabs.map(tab => {
-                    const tabProject = PROJECTS.find(project => project.id === tab) ?? PROJECTS[0]
+                    const tabProject = projectItems.find(project => project.id === tab) ?? projectItems[0]
                     const isActive = selectedFile === tab
 
                     return (
@@ -475,6 +395,20 @@ export default function ProjectsSection() {
                     {currentProject.terminal?.map(line => (
                       <div key={line}><span className="text-tertiary">&gt;</span> {line}</div>
                     ))}
+                    {currentProject.link && (
+                      <div>
+                        <span style={{ color: currentProject.color }}>$</span>{' '}
+                        <a
+                          href={currentProject.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="project-console-link"
+                          style={{ color: currentProject.color }}
+                        >
+                          {currentProject.linkLabel || 'Open project'} --ctrl-click
+                        </a>
+                      </div>
+                    )}
                     <div><span style={{ color: currentProject.color }}>$</span> status --active --accent={currentProject.gallery}</div>
                   </div>
                 </div>

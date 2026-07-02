@@ -1,74 +1,25 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { ExternalLink, Mail, Download, Github, Linkedin, Instagram } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import ScrollReveal from '../components/ScrollReveal'
 import SectionHeader from '../components/SectionHeader'
 import StatusBadge from '../components/StatusBadge'
 import BorderGlowCard from '../components/BorderGlowCard'
 import { useReducedMotion } from '../hooks/useReducedMotion'
-
-const SOCIAL_LINKS = [
-  {
-    label: 'GitHub',
-    value: 'vrokerev',
-    icon: Github,
-    href: 'https://github.com/vrokerev',
-    color: '#38BDF8',
-  },
-  {
-    label: 'LinkedIn',
-    value: 'victor-mma',
-    icon: Linkedin,
-    href: 'https://www.linkedin.com/in/victor-mma',
-    color: '#6366F1',
-  },
-  {
-    label: 'Instagram',
-    value: '@victhor.ma',
-    icon: Instagram,
-    href: 'https://www.instagram.com/victhor.ma/',
-    color: '#EC4899',
-  },
-  {
-    label: 'Email',
-    value: 'victormanuelmeneses@hotmail.com',
-    icon: Mail,
-    href: 'mailto:victormanuelmeneses@hotmail.com',
-    color: '#34D399',
-  },
-  {
-    label: 'CV',
-    value: 'download.pdf',
-    icon: Download,
-    href: null,
-    color: '#F59E0B',
-  },
-]
-
-const TERMINAL_LINES = [
-  '$ connect --channels',
-  '',
-  'Available channels:',
-  'github     Code, repos and dev activity',
-  'linkedin   Professional profile',
-  'instagram  Personal / social updates',
-  'email      Direct contact',
-  'cv         Resume file',
-  '',
-  '$ ready --status online',
-]
-
-const CHANNEL_NAMES = ['github', 'linkedin', 'instagram', 'email', 'cv']
+import { usePortfolioContent } from '../data/portfolioContent'
+import { getIcon } from '../lib/iconMap'
 
 function TerminalTypedLine({
   text,
   active,
+  channelNames,
 }: {
   text: string
   active: boolean
+  channelNames: string[]
 }) {
   if (text === '') return <div className="h-4" />
 
-  const channel = CHANNEL_NAMES.find(name => text.startsWith(name))
+  const channel = channelNames.find(name => text.startsWith(name))
 
   if (text.startsWith('$ ')) {
     return (
@@ -99,11 +50,17 @@ function TerminalTypedLine({
 }
 
 export default function ContactSection() {
+  const { contact } = usePortfolioContent()
   const terminalRef = useRef<HTMLDivElement>(null)
   const reducedMotion = useReducedMotion()
   const [terminalStarted, setTerminalStarted] = useState(false)
-  const [typedLines, setTypedLines] = useState(() => TERMINAL_LINES.map(() => ''))
+  const [typedLines, setTypedLines] = useState(() => contact.terminalLines.map(() => ''))
   const [activeLine, setActiveLine] = useState(0)
+
+  useEffect(() => {
+    setTypedLines(contact.terminalLines.map(() => ''))
+    setActiveLine(0)
+  }, [contact.terminalLines])
 
   useEffect(() => {
     if (reducedMotion) return
@@ -133,12 +90,12 @@ export default function ContactSection() {
     let timer: number | null = null
 
     const typeNext = () => {
-      if (lineIndex >= TERMINAL_LINES.length) {
-        setActiveLine(TERMINAL_LINES.length - 1)
+      if (lineIndex >= contact.terminalLines.length) {
+        setActiveLine(contact.terminalLines.length - 1)
         return
       }
 
-      const fullLine = TERMINAL_LINES[lineIndex]
+      const fullLine = contact.terminalLines[lineIndex]
       setActiveLine(lineIndex)
 
       if (fullLine === '') {
@@ -170,17 +127,17 @@ export default function ContactSection() {
     return () => {
       if (timer) window.clearTimeout(timer)
     }
-  }, [terminalStarted, reducedMotion])
+  }, [terminalStarted, reducedMotion, contact.terminalLines])
 
-  const visibleTypedLines = reducedMotion ? TERMINAL_LINES : typedLines
-  const visibleActiveLine = reducedMotion ? TERMINAL_LINES.length - 1 : activeLine
+  const visibleTypedLines = reducedMotion ? contact.terminalLines : typedLines
+  const visibleActiveLine = reducedMotion ? contact.terminalLines.length - 1 : activeLine
   const terminalIsStarted = reducedMotion || terminalStarted
 
   return (
     <section id="contact" className="section-padding">
       <div className="max-w-[940px] mx-auto px-4">
         <ScrollReveal>
-          <SectionHeader title="Contact" number="06" centered subtitle="Let’s connect for projects, work opportunities, or creative ideas." />
+          <SectionHeader title={contact.title} number={contact.number} centered subtitle={contact.subtitle} />
         </ScrollReveal>
 
         <ScrollReveal>
@@ -192,7 +149,7 @@ export default function ContactSection() {
                 <div className="w-3 h-3 rounded-full bg-green" />
               </div>
               <div className="absolute left-1/2 -translate-x-1/2 font-mono-sm text-tertiary">
-                contact
+                {contact.terminalTitle}
               </div>
             </div>
 
@@ -204,9 +161,10 @@ export default function ContactSection() {
             >
               {visibleTypedLines.map((line, index) => (
                 <TerminalTypedLine
-                  key={`${TERMINAL_LINES[index]}-${index}`}
+                  key={`${contact.terminalLines[index]}-${index}`}
                   text={line}
                   active={terminalIsStarted && visibleActiveLine === index}
+                  channelNames={contact.channelNames}
                 />
               ))}
             </div>
@@ -214,8 +172,8 @@ export default function ContactSection() {
         </ScrollReveal>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {SOCIAL_LINKS.map((link, i) => {
-            const Icon = link.icon
+          {contact.links.map((link, i) => {
+            const Icon = getIcon(link.icon, 'mail')
             const isExternal = link.href?.startsWith('http')
             const cardContent = (
               <>
@@ -265,9 +223,9 @@ export default function ContactSection() {
 
         <ScrollReveal delay={0.4}>
           <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
-            <StatusBadge text="Available for opportunities" />
+            <StatusBadge text={contact.statusBadge} />
             <span className="font-mono-sm text-tertiary">
-              ● Typically responds within 24h
+              * {contact.responseText}
             </span>
           </div>
         </ScrollReveal>

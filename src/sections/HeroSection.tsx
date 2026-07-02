@@ -5,22 +5,13 @@ import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useIsMobile } from '../hooks/use-mobile'
 import ConstellationCanvas from './ConstellationCanvas'
 import StatusBadge from '../components/StatusBadge'
+import { usePortfolioContent, type HeroLine } from '../data/portfolioContent'
 
 const HERO_TYPE_SPEED_MS = 7
 const HERO_LINE_PAUSE_MS = 60
 
-const TERMINAL_LINES = [
-  { text: 'load_profile --verbose', type: 'command' as const },
-  { text: '// Initializing identity module...', type: 'comment' as const },
-  { text: 'Name:        Victor Meneses', type: 'output' as const, highlight: 'Victor Meneses' },
-  { text: 'Role:        Software Engineer @ Cuevatech', type: 'output' as const, highlight: 'Software Engineer' },
-  { text: 'Education:   Software Engineering — UPC', type: 'output' as const },
-  { text: 'English:     B2 (Professional working proficiency)', type: 'output' as const },
-  { text: 'Status:      Available for opportunities', type: 'output' as const, highlight: 'Available' },
-  { text: '// Profile loaded successfully.', type: 'comment' as const },
-]
-
 export default function HeroSection() {
+  const { hero } = usePortfolioContent()
   const sectionRef = useRef<HTMLElement>(null)
   const terminalRef = useRef<HTMLDivElement>(null)
   const linesRef = useRef<HTMLDivElement>(null)
@@ -34,9 +25,9 @@ export default function HeroSection() {
   const [charIndex, setCharIndex] = useState(0)
   const [showCursor, setShowCursor] = useState(true)
   const shouldAnimate = !reducedMotion && !isMobile
-  const terminalFinished = !shouldAnimate || currentLineIndex >= TERMINAL_LINES.length
-  const visibleDisplayedLines = shouldAnimate ? displayedLines : TERMINAL_LINES.length
-  const visibleCurrentLineIndex = shouldAnimate ? currentLineIndex : TERMINAL_LINES.length
+  const terminalFinished = !shouldAnimate || currentLineIndex >= hero.terminalLines.length
+  const visibleDisplayedLines = shouldAnimate ? displayedLines : hero.terminalLines.length
+  const visibleCurrentLineIndex = shouldAnimate ? currentLineIndex : hero.terminalLines.length
 
   // Terminal entrance animation
   useEffect(() => {
@@ -56,9 +47,9 @@ export default function HeroSection() {
   useEffect(() => {
     if (!fontsLoaded || !shouldAnimate) return
 
-    if (currentLineIndex >= TERMINAL_LINES.length) return
+    if (currentLineIndex >= hero.terminalLines.length) return
 
-    const line = TERMINAL_LINES[currentLineIndex]
+    const line = hero.terminalLines[currentLineIndex]
     const fullText = line.text
 
     if (charIndex < fullText.length) {
@@ -76,7 +67,7 @@ export default function HeroSection() {
       }, HERO_LINE_PAUSE_MS)
       return () => clearTimeout(timer)
     }
-  }, [fontsLoaded, shouldAnimate, currentLineIndex, charIndex])
+  }, [fontsLoaded, shouldAnimate, currentLineIndex, charIndex, hero.terminalLines])
 
   // CTA fade in
   useEffect(() => {
@@ -99,7 +90,7 @@ export default function HeroSection() {
     return () => clearInterval(interval)
   }, [shouldAnimate])
 
-  const renderLine = (line: typeof TERMINAL_LINES[0], index: number) => {
+  const renderLine = (line: HeroLine, index: number) => {
     const isCurrentLine = index === visibleCurrentLineIndex && !terminalFinished
     const isDisplayed = index < visibleDisplayedLines
     const text = isCurrentLine ? currentLineText : line.text
@@ -149,11 +140,11 @@ export default function HeroSection() {
 
       <div className="relative z-10 w-full max-w-[800px] mx-auto px-4 py-20 flex flex-col items-center">
         <h1 className="sr-only">
-          Victor Meneses, Software Engineer focused on modern web experiences and cybersecurity
+          {hero.srTitle}
         </h1>
 
         {/* Status badge */}
-        <StatusBadge text="SYSTEM INITIALIZED" className="mb-8" />
+        <StatusBadge text={hero.statusBadge} className="mb-8" />
 
         {/* Terminal Window */}
         <div
@@ -169,13 +160,13 @@ export default function HeroSection() {
               <div className="w-3 h-3 rounded-full bg-green" />
             </div>
             <div className="absolute left-1/2 -translate-x-1/2 font-mono-sm text-tertiary">
-              profile_load.exe
+              {hero.terminalTitle}
             </div>
           </div>
 
           {/* Terminal body */}
           <div ref={linesRef} className="hero-terminal-body p-7 sm:p-8 space-y-1.5">
-            {TERMINAL_LINES.map((line, i) => renderLine(line, i))}
+            {hero.terminalLines.map((line, i) => renderLine(line, i))}
             {terminalFinished && (
               <div className="font-mono hero-terminal-line">
                 <span className="text-tertiary mr-2">$</span>
@@ -192,16 +183,16 @@ export default function HeroSection() {
           style={{ opacity: terminalFinished ? 1 : 0 }}
         >
           <button
-            onClick={() => scrollTo('#projects')}
+            onClick={() => scrollTo(hero.primaryTarget)}
             className="px-6 py-3 bg-cyan text-page font-nav rounded hover:brightness-110 transition-all duration-200"
           >
-            View Projects →
+            {hero.primaryCta}
           </button>
           <button
-            onClick={() => scrollTo('#contact')}
+            onClick={() => scrollTo(hero.secondaryTarget)}
             className="px-6 py-3 border border-[#232D3F] text-primary font-nav rounded hover:border-cyan hover:text-cyan transition-all duration-200"
           >
-            Contact Me
+            {hero.secondaryCta}
           </button>
         </div>
       </div>
